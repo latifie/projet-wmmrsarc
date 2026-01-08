@@ -110,7 +110,15 @@ A compléter
 
 Donner le lien vers la documentation swagger et/ou faire un tableau récapitulant l'API
 
-A compléter
+| ENDPOINT        | GET                                                        | POST                                                                                               | PUT                                                                                          | DELETE                           |
+|-----------------|------------------------------------------------------------|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|----------------------------------|
+| /api/login      |                                                            | Obtention du token de l'utilisateur en postant les informations de connexion / **email, password** |                                                                                              |                                  |
+| /api/users      | (ADMIN) Lister tous les utilisateurs                       | Créer un utilisateur / **name, email, password**                                                   |                                                                                              |                                  |
+| /api/users/me   | (TOKEN) Obtenir les informations de l'utilisateur connecté |                                                                                                    | (TOKEN) Mettre à jour les informations de l'utilisateur connecté / **name, email, password** |                                  |
+| /api/users/{id} | (ADMIN) Obtenir les informations d'un utilisateur          |                                                                                                    | (ADMIN) Mettre à jour les informations de l'utilisateur / **name, email, password, isAdmin** | (ADMIN) Supprimer un utilisateur |
+| /api/chats      | (ADMIN) Lister tous les chats                              | (ADMIN) Créer un chat / **userid, model**                                                          |                                                                                              |                                  |
+| /api/chats/me   | (TOKEN) Obtenir les chats de l'utilisateur connecté        |                                                                                                    |                                                                                              |                                  |
+| /api/chats/{id} | (ADMIN/OWNER) Obtenir les informations d'un chat           |                                                                                                    |                                                                                              | (ADMIN/OWNER) Supprimer un chat  |
 
 ## Architecture du code
 
