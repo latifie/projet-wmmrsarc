@@ -9,7 +9,7 @@
         "doc": "node src/util/swagger.js",
         "start": "npm run doc && npm run updatedb  && node src/server.js",
         "startdev": "npm run doc && npm run updatedb && npx nodemon src/server.js",
-        "startdev:proxyreact": "PROXYREACT=true npm run startdev", 
+        "startdev:proxyreact": "PROXYREACT=true npm run startdev",
         "test": "npm run doc && DB=bdtest.sqlite npm run updatedb && DB=bdtest.sqlite jest --coverage"
     },
     "keywords": [
@@ -28,6 +28,7 @@
         "helmet": "^3.21.2",
         "http-proxy-middleware": "^3.0.3",
         "http-status": "^1.3.2",
+        "jsonwebtoken": "^9.0.3",
         "jws": "^4.0.0",
         "mandatoryenv": "^1.1.1",
         "mariadb": "^2.1.1",
