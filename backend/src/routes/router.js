@@ -6,10 +6,6 @@ router.use('/', (req, res, next) => {
   next()
 })
 
-// Authentication routes (NOUVEAU)
-router.use('/auth', require('./auth'))
-
-// User routes (legacy + protected)
-router.use(require('./user'))
+router.use('/api', require('./api'))
 
 module.exports = router

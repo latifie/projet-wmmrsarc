@@ -4,13 +4,6 @@ const user = require('../controllers/user.js')
 const { verifyToken, isAdmin, isOwnerOrAdmin } = require('../middleware/auth.js')
 
 /**
- * Legacy routes for backward compatibility
- * WARNING: These routes are deprecated
- */
-router.post('/login', user.login)
-router.post('/users', user.newUser)
-
-/**
  * Protected routes - require authentication
  */
 

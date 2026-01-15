@@ -1,0 +1,27 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      replicas: ${OLLAMA_REPLICAS} 
+
+  allama-webui:
+    image: ghcr.io/ollama-webui/ollama-webui:latest
+    ports:
+      - "3000:8080"
+    volumes:
+      - ollama_webui:/app/backend/data
+    depends_on:
+      - ollama
+    environment:
+      - 'OLLAMA_API_BASE_URL=http://ollama:11434/api'
+
+volumes:
+  ollama_data:
+    name: ollama_data
+  ollama_webui:
+    name: ollama_webui

@@ -27,7 +27,7 @@ const swaggerFile = require('../swagger_output.json')
 app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 
 // Assign Routes
-app.use('/api', require('./routes/router.js'))
+app.use('/', require('./routes/router.js'))
 // Handle errors
 app.use(errorHandler())
 

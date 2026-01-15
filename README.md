@@ -9,11 +9,43 @@ author:
 
 ## Installation
 
+<<<<<<< HEAD
 ### Prérequis
 
 - Node.js (version 18 ou supérieure)
 - npm ou yarn
 - Git
+=======
+Premièrement, il faut que docker soit installé sur la machine, et que le repo soit clonné dedans (ici nous traiterons unniquement le cas ou on le déploie sur une seule machine).
+
+
+En mode développement :
+
+Notre solution va utiliser le docker-compose.yml que nous fournissons pour créer un noeud ollama.
+Voici comment on le génère à la main.
+
+1. exporter la variable OLLAMA_WEBUI_REPLICAS
+```bash
+export OLLAMA_REPLICAS=3
+```
+
+2. Initier le docker swarm, et déployer la solution
+```bash
+docker swarm init
+docker stack deploy -c docker-compose.yml ollama-node
+```
+
+3. On peut voir nos containers tourner en executant la commande suivante:
+```bash
+docker service ls
+```
+
+4. Une fois que l'on à fini avec notre environment de développement, on arrête/supprime notre swarm
+```bash
+docker stack rm ollama-node
+docker swarm leave --force
+```
+>>>>>>> origin/main
 
 ### Variables d'environnement
 
