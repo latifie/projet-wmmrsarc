@@ -3,9 +3,9 @@ const userModel = require('../models/users.js')
 const has = require('has-keys')
 const CodeError = require('../util/CodeError.js')
 const bcrypt = require('bcrypt')
-const jws = require('jws')
-require('mandatoryenv').load(['TOKENSECRET'])
-const { TOKENSECRET } = process.env
+const jwt = require('jsonwebtoken')
+require('mandatoryenv').load(['ACCESS_TOKEN_SECRET', 'ACCESS_TOKEN_EXPIRY'])
+const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY } = process.env
 
 function validPassword (password) {
   return /^(?=.*[\d])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*])[\w!@#$%^&*]{8,}$/.test(password)
@@ -14,14 +14,22 @@ function validPassword (password) {
 module.exports = {
   async login (req, res) {
     // #swagger.tags = ['Users']
-    // #swagger.summary = 'Verify credentials of user using email and password and return token'
+    // #swagger.summary = 'Verify credentials of user using email and password and return JWT token'
     // #swagger.parameters['obj'] = { in: 'body', schema: { $email: 'John.Doe@acme.com', $password: '12345'}}
     if (!has(req.body, ['email', 'password'])) throw new CodeError('You must specify the email and password', status.BAD_REQUEST)
     const { email, password } = req.body
     const user = await userModel.findOne({ where: { email } })
     if (user) {
       if (await bcrypt.compare(password, user.passhash)) {
-        const token = jws.sign({ header: { alg: 'HS256' }, payload: email, secret: TOKENSECRET })
+        const token = jwt.sign(
+          { 
+            id: user.id,
+            email: user.email,
+            isAdmin: user.isAdmin 
+          },
+          ACCESS_TOKEN_SECRET,
+          { expiresIn: ACCESS_TOKEN_EXPIRY || '1h' }
+        )
         res.json({ status: true, message: 'Login/Password ok', token })
         return
       }
@@ -32,9 +40,8 @@ module.exports = {
     // #swagger.tags = ['Users']
     // #swagger.summary = 'New User'
     // #swagger.parameters['obj'] = { in: 'body', description:'Name and email', schema: { $name: 'John Doe', $email: 'John.Doe@acme.com', $password: '1m02P@SsF0rt!'}}
-    if (!has(req.body, ['name', 'email', 'password'])) throw new CodeError('You must specify the name and email', status.BAD_REQUEST)
+    if (!has(req.body, ['name', 'email', 'password'])) throw new CodeError('You must specify the name, email and password', status.BAD_REQUEST)
     const { name, email, password } = req.body
-    console.log(req.body)
     if (!validPassword(password)) throw new CodeError('Weak password!', status.BAD_REQUEST)
     await userModel.create({ name, email, passhash: await bcrypt.hash(password, 10) })
     res.json({ status: true, message: 'User Added' })
@@ -55,7 +62,7 @@ module.exports = {
     for (const field of ['name', 'email', 'password']) {
       if (has(req.body, field)) {
         if (field === 'password') {
-          userModified.passhash = await bcrypt.hash(req.body.password, 2)
+          userModified.passhash = await bcrypt.hash(req.body.password, 10)
         } else {
           userModified[field] = req.body[field]
         }

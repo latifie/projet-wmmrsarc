@@ -17,12 +17,12 @@ const verifyToken = () => {
       const authHeader = req.headers.authorization
       
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new CodeError('No token provided or invalid format', status.UNAUTHORIZED)
+        throw new CodeError('No token provided or invalid format. Use: Authorization: Bearer <token>', status.UNAUTHORIZED)
       }
 
       const token = authHeader.substring(7) // Enlever "Bearer "
 
-      // Vérifier et décoder le token
+      // Vérifier et décoder le token JWT
       const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET)
       
       // Récupérer l'utilisateur
@@ -45,6 +45,12 @@ const verifyToken = () => {
 
       next()
     } catch (error) {
+      if (error instanceof CodeError) {
+        return res.status(error.code).json({ 
+          status: false, 
+          message: error.message 
+        })
+      }
       if (error.name === 'JsonWebTokenError') {
         return res.status(status.UNAUTHORIZED).json({ 
           status: false, 
