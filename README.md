@@ -110,7 +110,17 @@ A compléter
 
 Donner le lien vers la documentation swagger et/ou faire un tableau récapitulant l'API
 
-A compléter
+| ENDPOINT                | GET                                                        | POST                                                                                               | PUT                                                                                          | DELETE                                         |
+|-------------------------|------------------------------------------------------------|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|------------------------------------------------|
+| /api/login              |                                                            | Obtention du token de l'utilisateur en postant les informations de connexion / **email, password** |                                                                                              |                                                |
+| /api/users              | (ADMIN) Lister tous les utilisateurs                       | Créer un utilisateur / **name, email, password**                                                   |                                                                                              |                                                |
+| /api/users/me           | (TOKEN) Obtenir les informations de l'utilisateur connecté |                                                                                                    | (TOKEN) Mettre à jour les informations de l'utilisateur connecté / **name, email, password** |                                                |
+| /api/users/{id}         | (ADMIN) Obtenir les informations d'un utilisateur          |                                                                                                    | (ADMIN) Mettre à jour les informations de l'utilisateur / **name, email, password, isAdmin** | (ADMIN) Supprimer un utilisateur               |
+| /api/chats              | (ADMIN) Lister tous les chats                              | (ADMIN) Créer un chat / **userid, model**                                                          |                                                                                              |                                                |
+| /api/chats/me           | (TOKEN) Obtenir les chats de l'utilisateur connecté        |                                                                                                    |                                                                                              |                                                |
+| /api/chats/{id}         | (ADMIN/OWNER) Obtenir les informations d'un chat           |                                                                                                    | (ADMIN/OWNER) Mettre à jour les informations d'un chat / **model**                           | (ADMIN/OWNER) Supprimer un chat                |
+| /api/chats/{id}/send    |                                                            | (ADMIN/OWNER) Envoyer un message sur un chat / **message**                                         |                                                                                              |                                                |
+| /api/chats/{id}/history | (ADMIN/OWNER) Obtenir l'historique d'un chat               |                                                                                                    |                                                                                              | (ADMIN/OWNER) Supprimer l'historique d'un chat |
 
 ## Architecture du code
 
@@ -145,25 +155,18 @@ A modifier/compléter...
 
 ```plantuml
 class User{
-  name
-  email
-  passhash
+  name: string
+  email: string
+  password: string
   isAdmin : boolean
 }
 
-class Message{
-  content
+class Chat{
+  model: string
+  history: blob
 }
 
-class Group{
-  name
-}
-
-User "1" -- "n" Message : posts
-Group "1" -- "n" Message : contains
-
-User "n" -- "n"  Group : is member 
-User "1" -- "n"  Group : create and own
+User "1" -- "n" Chat : owns
 ```
 
 #### Architecture de votre code
