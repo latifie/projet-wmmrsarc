@@ -12,4 +12,7 @@ router.use('/auth', require('./auth'))
 // User routes
 router.use('/users', require('./user'))
 
+// Chat routes
+router.use('/chats', require('./chat'))
+
 module.exports = router
