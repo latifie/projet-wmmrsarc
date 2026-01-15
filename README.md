@@ -108,19 +108,58 @@ A compléter
 
 ### API mise en place
 
-Donner le lien vers la documentation swagger et/ou faire un tableau récapitulant l'API
+Documentation Swagger disponible sur `/doc` lorsque le serveur est démarré.
 
-| ENDPOINT                | GET                                                        | POST                                                                                               | PUT                                                                                          | DELETE                                         |
-|-------------------------|------------------------------------------------------------|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|------------------------------------------------|
-| /api/login              |                                                            | Obtention du token de l'utilisateur en postant les informations de connexion / **email, password** |                                                                                              |                                                |
-| /api/users              | (ADMIN) Lister tous les utilisateurs                       | Créer un utilisateur / **name, email, password**                                                   |                                                                                              |                                                |
-| /api/users/me           | (TOKEN) Obtenir les informations de l'utilisateur connecté |                                                                                                    | (TOKEN) Mettre à jour les informations de l'utilisateur connecté / **name, email, password** |                                                |
-| /api/users/{id}         | (ADMIN) Obtenir les informations d'un utilisateur          |                                                                                                    | (ADMIN) Mettre à jour les informations de l'utilisateur / **name, email, password, isAdmin** | (ADMIN) Supprimer un utilisateur               |
-| /api/chats              | (ADMIN) Lister tous les chats                              | (ADMIN) Créer un chat / **userid, model**                                                          |                                                                                              |                                                |
-| /api/chats/me           | (TOKEN) Obtenir les chats de l'utilisateur connecté        |                                                                                                    |                                                                                              |                                                |
-| /api/chats/{id}         | (ADMIN/OWNER) Obtenir les informations d'un chat           |                                                                                                    | (ADMIN/OWNER) Mettre à jour les informations d'un chat / **model**                           | (ADMIN/OWNER) Supprimer un chat                |
-| /api/chats/{id}/send    |                                                            | (ADMIN/OWNER) Envoyer un message sur un chat / **message**                                         |                                                                                              |                                                |
-| /api/chats/{id}/history | (ADMIN/OWNER) Obtenir l'historique d'un chat               |                                                                                                    |                                                                                              | (ADMIN/OWNER) Supprimer l'historique d'un chat |
+#### Authentification
+
+| ENDPOINT | GET | POST | PUT | DELETE | Description |
+|----------|-----|------|-----|--------|-------------|
+| `/api/auth/register` | | ✅ Public | | | Inscription : **name, email, password** → Retourne tokens JWT |
+| `/api/auth/login` | | ✅ Public | | | Connexion : **email, password** → Retourne tokens JWT |
+| `/api/auth/refresh` | | ✅ Public | | | Rafraîchir le token d'accès : **refreshToken** |
+| `/api/auth/logout` | | ✅ Public | | | Déconnexion : **refreshToken** |
+| `/api/auth/me` | ✅ TOKEN | | | | Informations de l'utilisateur connecté |
+
+#### Utilisateurs
+
+| ENDPOINT | GET | POST | PUT | DELETE | Description |
+|----------|-----|------|-----|--------|-------------|
+| `/api/users` | ✅ TOKEN | | | | Liste tous les utilisateurs (id, name, email) |
+| `/api/users/:id` | | | ✅ TOKEN (OWNER/ADMIN) | ✅ TOKEN (ADMIN) | Mettre à jour / Supprimer un utilisateur |
+
+#### Modèles IA
+
+| ENDPOINT | GET | POST | PUT | DELETE | Description |
+|----------|-----|------|-----|--------|-------------|
+| `/api/ai-models` | ✅ Public | | | | Liste des modèles IA disponibles |
+| `/api/ai-models/:id` | ✅ Public | | | | Détails d'un modèle IA |
+
+#### Demandes (Tickets)
+
+| ENDPOINT | GET | POST | PUT | DELETE | Description |
+|----------|-----|------|-----|--------|-------------|
+| `/api/requests` | ✅ TOKEN | ✅ TOKEN | | | Liste ses demandes / Créer une demande : **aiModelId** |
+| `/api/requests/:id` | ✅ TOKEN (OWNER/ADMIN) | | | | Détails d'une demande |
+| `/api/requests/:id/approve` | | ✅ TOKEN (ADMIN) | | | Valider une demande → Déploie l'instance |
+| `/api/requests/:id/reject` | | ✅ TOKEN (ADMIN) | | | Rejeter une demande |
+
+#### Instances (Chats déployés)
+
+| ENDPOINT | GET | POST | PUT | DELETE | Description |
+|----------|-----|------|-----|--------|-------------|
+| `/api/instances` | ✅ TOKEN (ADMIN) | | | | Liste toutes les instances |
+| `/api/instances/:id` | ✅ TOKEN (ADMIN) | | | | Détails d'une instance |
+| `/api/instances/:id/start` | | ✅ TOKEN (ADMIN) | | | Démarrer une instance |
+| `/api/instances/:id/stop` | | ✅ TOKEN (ADMIN) | | | Arrêter une instance |
+| `/api/instances/:id/restart` | | ✅ TOKEN (ADMIN) | | | Redémarrer une instance |
+| `/api/instances/:id/logs` | ✅ TOKEN (ADMIN) | | | | Voir les logs d'une instance |
+| `/api/instances/:id` | | | | ✅ TOKEN (ADMIN) | Supprimer une instance |
+
+**Légende :**
+- ✅ = Route disponible
+- TOKEN = Nécessite un token JWT valide (header: `Authorization: Bearer <token>`)
+- ADMIN = Nécessite les droits administrateur
+- OWNER = Nécessite d'être le propriétaire de la ressource
 
 ## Architecture du code
 
@@ -151,23 +190,69 @@ login@pc nomProjet % tree --charset=ascii frontend
 
 #### Schéma de votre base de donnée
 
-A modifier/compléter...
-
 ```plantuml
-class User{
-  name: string
-  email: string
-  password: string
-  isAdmin : boolean
+class User {
+  +id : INTEGER (PK, auto-increment)
+  +name : STRING(128)
+  +email : STRING(128) [unique]
+  +passhash : STRING(60)
+  +isAdmin : BOOLEAN
 }
 
-class Chat{
-  model: string
-  history: blob
+class AIModel {
+  +id : INTEGER (PK, auto-increment)
+  +name : STRING(128)
+  +description : TEXT
+  +dockerImage : STRING(255)
+  +dockerCompose : TEXT
+  +config : JSON
+  +isActive : BOOLEAN
 }
 
-User "1" -- "n" Chat : owns
+class Request {
+  +id : INTEGER (PK, auto-increment)
+  +status : ENUM(pending, approved, rejected, deployed)
+  +createdAt : DATETIME
+  +updatedAt : DATETIME
+  +approvedAt : DATETIME
+  +rejectedAt : DATETIME
+  +rejectionReason : TEXT
+}
+
+class Instance {
+  +id : INTEGER (PK, auto-increment)
+  +name : STRING(128)
+  +status : ENUM(running, stopped, error, starting, stopping)
+  +dockerComposePath : STRING(255)
+  +port : INTEGER
+  +url : STRING(255)
+  +createdAt : DATETIME
+  +updatedAt : DATETIME
+  +lastStartedAt : DATETIME
+  +lastStoppedAt : DATETIME
+}
+
+class RefreshToken {
+  +id : INTEGER (PK, auto-increment)
+  +token : STRING(255) [unique]
+  +userId : INTEGER (FK)
+  +expiresAt : DATETIME
+  +createdAt : DATETIME
+}
+
+User "1" -- "n" Request : creates
+User "1" -- "n" RefreshToken : has
+AIModel "1" -- "n" Request : requested_in
+Request "1" -- "1" Instance : deploys
+AIModel "1" -- "n" Instance : used_in
 ```
+
+**Relations :**
+- Un utilisateur peut créer plusieurs demandes
+- Une demande est liée à un modèle IA et à un utilisateur
+- Une demande validée génère une instance
+- Une instance est liée à un modèle IA
+- Un utilisateur peut avoir plusieurs refresh tokens
 
 #### Architecture de votre code
 
