@@ -6,8 +6,12 @@ const db = require('../models/database.js')
 
 async function updatedb() {
   try {
-    chatModel.belongsTo(userModel)
     userModel.hasMany(chatModel)
+    chatModel.belongsTo(userModel, {
+      foreignKey: {
+        allowNull: false
+      }
+    })
 
     console.log('Synchronizing database...')
 

@@ -12,7 +12,8 @@ const chats = db.define('chats', {
   },
   dockerHost: {
     type: Sequelize.STRING(128),
-    default: "localhost"
+    defaultValue: "localhost",
+    allowNull: false
   },
   url: {
     type: Sequelize.STRING(128)

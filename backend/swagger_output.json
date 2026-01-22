@@ -263,6 +263,27 @@
         }
       }
     },
+    "/api/chats/all": {
+      "get": {
+        "tags": [
+          "Chats"
+        ],
+        "summary": "Get all chats",
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/chats/new": {
       "post": {
         "tags": [
@@ -277,27 +298,30 @@
             "type": "string"
           },
           {
-            "name": "body",
+            "name": "obj",
             "in": "body",
+            "description": "Either userId or userEmail",
             "schema": {
               "type": "object",
               "properties": {
                 "model": {
-                  "example": "any"
+                  "type": "string",
+                  "example": "llama3"
                 },
                 "userId": {
-                  "example": "any"
+                  "type": "number",
+                  "example": 67
                 },
                 "userEmail": {
-                  "example": "any"
-                },
-                "in": {
-                  "example": "any"
-                },
-                "schema": {
-                  "example": "any"
+                  "type": "string",
+                  "example": "eeee@example.com"
                 }
-              }
+              },
+              "required": [
+                "model",
+                "userId",
+                "userEmail"
+              ]
             }
           }
         ],

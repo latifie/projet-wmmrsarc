@@ -8,7 +8,7 @@ module.exports = {
   async newChat(req, res) {
     // #swagger.tags = ['Chats']
     // #swagger.summary = 'New chat'
-    // #swagger.parameters['obj'] = { in: 'body', schema: { $model: 'llama3', oneOf: [$userId: 67, $userEmail: 'eeee@example.com'] } }
+    // #swagger.parameters['obj'] = { in: 'body', description: 'Either userId or userEmail', schema: { $model: 'llama3', $userId: 67, $userEmail: 'eeee@example.com' } }
     if (!req.body.model || !(req.body.userId || req.body.userEmail)) throw new CodeError('You must specify the model and the user id/email', status.BAD_REQUEST)
     const { model, userId, userEmail } = req.body
     if (userId) {
@@ -22,6 +22,13 @@ module.exports = {
     url = await container.createInstance(chat.id)
     await chatModel.update({ url }, { where: { id: chat.id } })
     data = { url: url }
-    res.json({ status: true, message: 'Chat created' }, data)
+    res.json({ status: true, message: 'Chat created', data })
+  },
+
+  async getChats(req, res) {
+    // #swagger.tags = ['Chats']
+    // #swagger.summary = 'Get all chats'
+    const data = await chatModel.findAll({ include: [userModel] })
+    res.json({ status: true, message: 'Returning chats', data })
   },
 }
