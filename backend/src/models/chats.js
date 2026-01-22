@@ -10,6 +10,11 @@ const chats = db.define('chats', {
     type: Sequelize.STRING(128),
     allowNull: false
   },
+  history: {
+    type: Sequelize.JSON,
+    defaultValue: [],
+    allowNull: false
+  },
   dockerHost: {
     type: Sequelize.STRING(128),
     defaultValue: "localhost",
@@ -17,6 +22,14 @@ const chats = db.define('chats', {
   },
   url: {
     type: Sequelize.STRING(128)
+  },
+  userId: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   }
 }, { timestamps: false })
 module.exports = chats

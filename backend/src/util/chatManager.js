@@ -3,18 +3,17 @@ var Dockerode = require('dockerode');
 var docker = new Dockerode({ socketPath: process.env.DOCKER_HOST });
 
 module.exports = {
-    async createInstance(id) {
+    async createInstance(id, model) {
         var container_name = "chat_" + id
-        var volume_name = container_name + "_open-webui"
+        var volume_name = container_name + "_data"
         var port = 20000 + id
 
         await docker.createContainer({
-            Image: 'ghcr.io/open-webui/open-webui:ollama',
+            Image: 'docker.io/ollama/ollama:latest',
             name: container_name,
-            Env: ["WEBUI_AUTH=False"],
             HostConfig: {
-                Binds: [volume_name + ":/app/backend/data"],
-                PortBindings: { "8080/tcp": [{ HostPort: `${port}` }] },
+                Binds: [volume_name + ":/root/.ollama"],
+                PortBindings: { "11434/tcp": [{ HostPort: `${port}` }] },
                 RestartPolicy: {
                     "Name": "always"
                 }
@@ -24,6 +23,8 @@ module.exports = {
         }).then(function (container) {
             container.start()
         })
+
+        // TODO: wait start & pull model
 
         return "http://localhost:" + port
     }
