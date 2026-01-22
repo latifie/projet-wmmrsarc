@@ -7,6 +7,8 @@ const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const helmet = require('helmet')
 const logger = require('./util/logger')
+const requestRoutes = require('./routes/requests');
+
 
 // Instantiate an Express Application
 const app = express()
@@ -51,4 +53,5 @@ app.use('*', (req, res) => {
     .status(404)
     .json({ status: false, message: 'Endpoint Not Found' })
 })
+app.use('/api/requests', requestRoutes);
 module.exports = app
