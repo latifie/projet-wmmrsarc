@@ -9,43 +9,12 @@ author:
 
 ## Installation
 
-<<<<<<< HEAD
 ### Prérequis
 
 - Node.js (version 18 ou supérieure)
 - npm ou yarn
 - Git
-=======
-Premièrement, il faut que docker soit installé sur la machine, et que le repo soit clonné dedans (ici nous traiterons unniquement le cas ou on le déploie sur une seule machine).
-
-
-En mode développement :
-
-Notre solution va utiliser le docker-compose.yml que nous fournissons pour créer un noeud ollama.
-Voici comment on le génère à la main.
-
-1. exporter la variable OLLAMA_WEBUI_REPLICAS
-```bash
-export OLLAMA_REPLICAS=3
-```
-
-2. Initier le docker swarm, et déployer la solution
-```bash
-docker swarm init
-docker stack deploy -c docker-compose.yml ollama-node
-```
-
-3. On peut voir nos containers tourner en executant la commande suivante:
-```bash
-docker service ls
-```
-
-4. Une fois que l'on à fini avec notre environment de développement, on arrête/supprime notre swarm
-```bash
-docker stack rm ollama-node
-docker swarm leave --force
-```
->>>>>>> origin/main
+- Docker (optionnel, pour le déploiement des instances de chat IA)
 
 ### Variables d'environnement
 
@@ -172,9 +141,12 @@ a --> DELETE_INST
 ```
 
 **Fonctionnalités implémentées :**
-- ✅ Authentification (inscription, connexion, déconnexion)
-- ✅ Gestion des utilisateurs
-- ✅ Système de tokens JWT avec refresh tokens
+- ✅ Authentification complète (inscription, connexion, déconnexion, refresh token)
+- ✅ Gestion des utilisateurs (CRUD avec contrôle d'accès)
+- ✅ Système de tokens JWT avec refresh tokens (stockage en base de données)
+- ✅ Validation des mots de passe (complexité requise)
+- ✅ Middleware d'authentification et d'autorisation (verifyToken, isAdmin, isOwnerOrAdmin)
+- ✅ Documentation API automatique avec Swagger
 - ⏳ Sélection de modèles IA (à implémenter)
 - ⏳ Création de demandes (à implémenter)
 - ⏳ Gestion des demandes par admin (à implémenter)
@@ -236,35 +208,128 @@ Documentation Swagger disponible sur `/doc` lorsque le serveur est démarré.
 
 | ENDPOINT | GET | POST | PUT | DELETE | Description |
 |----------|-----|------|-----|--------|-------------|
-| `/api/ai-models` | ✅ Public | | | | Liste des modèles IA disponibles |
-| `/api/ai-models/:id` | ✅ Public | | | | Détails d'un modèle IA |
+| `/api/ai-models` | ⏳ | | | | Liste des modèles IA disponibles (à implémenter) |
+| `/api/ai-models/:id` | ⏳ | | | | Détails d'un modèle IA (à implémenter) |
 
 #### Demandes (Tickets)
 
 | ENDPOINT | GET | POST | PUT | DELETE | Description |
 |----------|-----|------|-----|--------|-------------|
-| `/api/requests` | ✅ TOKEN | ✅ TOKEN | | | Liste ses demandes / Créer une demande : **aiModelId** |
-| `/api/requests/:id` | ✅ TOKEN (OWNER/ADMIN) | | | | Détails d'une demande |
-| `/api/requests/:id/approve` | | ✅ TOKEN (ADMIN) | | | Valider une demande → Déploie l'instance |
-| `/api/requests/:id/reject` | | ✅ TOKEN (ADMIN) | | | Rejeter une demande |
+| `/api/requests` | ⏳ | ⏳ | | | Liste ses demandes / Créer une demande (à implémenter) |
+| `/api/requests/:id` | ⏳ | | | | Détails d'une demande (à implémenter) |
+| `/api/requests/:id/approve` | | ⏳ | | | Valider une demande → Déploie l'instance (à implémenter) |
+| `/api/requests/:id/reject` | | ⏳ | | | Rejeter une demande (à implémenter) |
 
 #### Instances (Chats déployés)
 
 | ENDPOINT | GET | POST | PUT | DELETE | Description |
 |----------|-----|------|-----|--------|-------------|
-| `/api/instances` | ✅ TOKEN (ADMIN) | | | | Liste toutes les instances |
-| `/api/instances/:id` | ✅ TOKEN (ADMIN) | | | | Détails d'une instance |
-| `/api/instances/:id/start` | | ✅ TOKEN (ADMIN) | | | Démarrer une instance |
-| `/api/instances/:id/stop` | | ✅ TOKEN (ADMIN) | | | Arrêter une instance |
-| `/api/instances/:id/restart` | | ✅ TOKEN (ADMIN) | | | Redémarrer une instance |
-| `/api/instances/:id/logs` | ✅ TOKEN (ADMIN) | | | | Voir les logs d'une instance |
-| `/api/instances/:id` | | | | ✅ TOKEN (ADMIN) | Supprimer une instance |
+| `/api/instances` | ⏳ | | | | Liste toutes les instances (à implémenter) |
+| `/api/instances/:id` | ⏳ | | | | Détails d'une instance (à implémenter) |
+| `/api/instances/:id/start` | | ⏳ | | | Démarrer une instance (à implémenter) |
+| `/api/instances/:id/stop` | | ⏳ | | | Arrêter une instance (à implémenter) |
+| `/api/instances/:id/restart` | | ⏳ | | | Redémarrer une instance (à implémenter) |
+| `/api/instances/:id/logs` | ⏳ | | | | Voir les logs d'une instance (à implémenter) |
+| `/api/instances/:id` | | | | ⏳ | Supprimer une instance (à implémenter) |
 
 **Légende :**
-- ✅ = Route disponible
+- ✅ = Route disponible et implémentée
+- ⏳ = Route planifiée mais non implémentée
 - TOKEN = Nécessite un token JWT valide (header: `Authorization: Bearer <token>`)
 - ADMIN = Nécessite les droits administrateur
 - OWNER = Nécessite d'être le propriétaire de la ressource
+- Public = Route accessible sans authentification
+
+#### Validations et règles métier
+
+**Inscription (`POST /api/auth/register`) :**
+- **name** : Requis, validation regex `^[a-z\-'\s]{1,128}$/i` (lettres, tirets, apostrophes, espaces, 1-128 caractères)
+- **email** : Requis, doit être un email valide et unique
+- **password** : Requis, doit respecter les critères suivants :
+  - Minimum 8 caractères
+  - Au moins 1 majuscule
+  - Au moins 1 minuscule
+  - Au moins 1 chiffre
+  - Au moins 1 caractère spécial (`!@#$%^&*`)
+  - Caractères autorisés : lettres, chiffres, caractères spéciaux `!@#$%^&*`
+- **isAdmin** : Optionnel, booléen (par défaut `false`)
+
+**Connexion (`POST /api/auth/login`) :**
+- **email** : Requis
+- **password** : Requis
+- En cas d'erreur (email ou mot de passe invalide), retourne un message générique : "Invalid email or password" (pour des raisons de sécurité)
+
+**Mise à jour utilisateur (`PUT /api/users/:id`) :**
+- **name** : Optionnel, même validation que lors de l'inscription
+- **email** : Optionnel, doit être un email valide
+- **password** : Optionnel, même validation que lors de l'inscription
+- Au moins un champ doit être fourni
+
+#### Formats de réponse
+
+**Réponse de succès standard :**
+```json
+{
+  "status": true,
+  "message": "Message de succès",
+  "data": { ... }
+}
+```
+
+**Réponse d'erreur standard :**
+```json
+{
+  "status": false,
+  "message": "Message d'erreur"
+}
+```
+
+**Exemple - Inscription réussie :**
+```json
+{
+  "status": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Exemple - Connexion réussie :**
+```json
+{
+  "status": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Exemple - Refresh token :**
+```json
+{
+  "status": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
 
 ## Architecture du code
 
@@ -306,6 +371,8 @@ frontend/
 
 #### Schéma de votre base de donnée
 
+**Modèles actuellement implémentés :**
+
 ```plantuml
 class User {
   +id : INTEGER (PK, auto-increment)
@@ -315,6 +382,20 @@ class User {
   +isAdmin : BOOLEAN
 }
 
+class RefreshToken {
+  +id : INTEGER (PK, auto-increment)
+  +token : STRING(500) [unique]
+  +userId : INTEGER (FK)
+  +expiresAt : DATETIME
+  +createdAt : DATETIME
+}
+
+User "1" -- "n" RefreshToken : has
+```
+
+**Modèles planifiés (à implémenter) :**
+
+```plantuml
 class AIModel {
   +id : INTEGER (PK, auto-increment)
   +name : STRING(128)
@@ -347,28 +428,17 @@ class Instance {
   +lastStartedAt : DATETIME
   +lastStoppedAt : DATETIME
 }
-
-class RefreshToken {
-  +id : INTEGER (PK, auto-increment)
-  +token : STRING(255) [unique]
-  +userId : INTEGER (FK)
-  +expiresAt : DATETIME
-  +createdAt : DATETIME
-}
-
-User "1" -- "n" Request : creates
-User "1" -- "n" RefreshToken : has
-AIModel "1" -- "n" Request : requested_in
-Request "1" -- "1" Instance : deploys
-AIModel "1" -- "n" Instance : used_in
 ```
 
-**Relations :**
+**Relations implémentées :**
+- Un utilisateur peut avoir plusieurs refresh tokens (relation 1-n)
+- Les refresh tokens sont supprimés automatiquement lors de la suppression d'un utilisateur (CASCADE)
+
+**Relations planifiées (à implémenter) :**
 - Un utilisateur peut créer plusieurs demandes
 - Une demande est liée à un modèle IA et à un utilisateur
 - Une demande validée génère une instance
 - Une instance est liée à un modèle IA
-- Un utilisateur peut avoir plusieurs refresh tokens
 
 #### Architecture de votre code
 
@@ -393,8 +463,9 @@ backend/
     │   └── refreshToken.js   # Modèle RefreshToken
     ├── routes/
     │   ├── router.js         # Routeur principal
-    │   ├── auth.js           # Routes /api/auth/*
-    │   └── user.js           # Routes /api/users/* (legacy + nouvelles)
+    │   ├── api.js            # Routeur API (/api)
+    │   ├── auth.js           # Routes /api/auth/* (register, login, refresh, logout, me)
+    │   └── user.js           # Routes /api/users/* (getUsers, updateUser, deleteUser)
     ├── middleware/
     │   └── auth.js           # Middleware d'authentification (verifyToken, isAdmin, isOwnerOrAdmin)
     ├── util/
@@ -410,10 +481,16 @@ backend/
 - **Express** : Framework web minimaliste
 - **Sequelize** : ORM pour la gestion de la base de données
 - **JWT** : Authentification avec tokens (jsonwebtoken)
-- **bcrypt** : Hashage des mots de passe
-- **Swagger** : Documentation API automatique
-- **SQLite** : Base de données en développement
-- **MariaDB** : Base de données en production (configurable)
+  - Access tokens : Tokens d'accès de courte durée (configurable via `ACCESS_TOKEN_EXPIRY`)
+  - Refresh tokens : Tokens de rafraîchissement de longue durée (configurable via `REFRESH_TOKEN_EXPIRY`, stockés en base)
+- **bcrypt** : Hashage des mots de passe (10 rounds de salage)
+- **Swagger** : Documentation API automatique (swagger-autogen + swagger-ui-express)
+- **SQLite** : Base de données en développement (par défaut)
+- **MariaDB** : Base de données en production (configurable via variable d'environnement `DB`)
+- **Helmet** : Sécurité HTTP (headers de sécurité)
+- **CORS** : Gestion des requêtes cross-origin
+- **Morgan** : Logging des requêtes HTTP
+- **express-custom-error** : Gestion d'erreurs personnalisée avec support async/await
 
 **Pattern MVC :**
 - **Models** : Définition des entités de base de données
@@ -426,16 +503,19 @@ backend/
 #### Rôles disponibles
 
 1. **Utilisateur (Client)** : `isAdmin = false`
-   - Peut créer des demandes de déploiement
-   - Peut consulter ses propres demandes
-   - Peut consulter la liste des modèles IA
+   - Peut consulter la liste des utilisateurs (GET `/api/users`)
+   - Peut modifier ses propres informations (PUT `/api/users/:id` si owner)
+   - ⏳ Peut créer des demandes de déploiement (à implémenter)
+   - ⏳ Peut consulter ses propres demandes (à implémenter)
+   - ⏳ Peut consulter la liste des modèles IA (à implémenter)
 
 2. **Administrateur** : `isAdmin = true`
    - Tous les droits utilisateur
-   - Peut consulter toutes les demandes
-   - Peut valider/rejeter les demandes
-   - Peut gérer les instances (start/stop/logs/delete)
-   - Peut gérer les utilisateurs (CRUD)
+   - Peut modifier n'importe quel utilisateur (PUT `/api/users/:id`)
+   - Peut supprimer des utilisateurs (DELETE `/api/users/:id`)
+   - ⏳ Peut consulter toutes les demandes (à implémenter)
+   - ⏳ Peut valider/rejeter les demandes (à implémenter)
+   - ⏳ Peut gérer les instances (start/stop/logs/delete) (à implémenter)
 
 #### Implémentation côté backend
 
@@ -467,7 +547,8 @@ router.put('/users/:id', verifyToken(), isOwnerOrAdmin(), user.updateUser)
 ```
 
 **Token JWT :**
-Le token contient les informations suivantes :
+
+Le **access token** contient les informations suivantes :
 ```json
 {
   "id": 1,
@@ -475,6 +556,21 @@ Le token contient les informations suivantes :
   "isAdmin": false
 }
 ```
+
+Le **refresh token** contient uniquement :
+```json
+{
+  "id": 1,
+  "email": "user@example.com"
+}
+```
+
+**Gestion des tokens :**
+- Les access tokens sont de courte durée (par défaut 1h, configurable via `ACCESS_TOKEN_EXPIRY`)
+- Les refresh tokens sont de longue durée (par défaut 7d, configurable via `REFRESH_TOKEN_EXPIRY`)
+- Les refresh tokens sont stockés en base de données avec une date d'expiration
+- Lors du logout, le refresh token est supprimé de la base de données
+- Lors du refresh, un nouveau access token est généré sans créer de nouveau refresh token
 
 #### Implémentation côté frontend
 
