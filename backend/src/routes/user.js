@@ -8,12 +8,12 @@ const { verifyToken, isAdmin, isOwnerOrAdmin } = require('../middleware/auth.js'
  */
 
 // Get all users - requires authentication
-router.get('/users', verifyToken(), user.getUsers)
+router.get('/', verifyToken(), user.getUsers)
 
 // Update user - requires to be the owner or admin
-router.put('/users/:id', verifyToken(), isOwnerOrAdmin(), user.updateUser)
+router.put('/:id', verifyToken(), isOwnerOrAdmin(), user.updateUser)
 
 // Delete user - requires admin privileges
-router.delete('/users/:id', verifyToken(), isAdmin(), user.deleteUser)
+router.delete('/:id', verifyToken(), isAdmin(), user.deleteUser)
 
 module.exports = router
