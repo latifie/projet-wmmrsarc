@@ -11,7 +11,7 @@ function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -40,8 +40,8 @@ function Register() {
       return false;
     }
 
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      setError('Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre');
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/.test(password)) {
+      setError('Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (!@#$%^&*)');
       return false;
     }
 
@@ -64,7 +64,7 @@ function Register() {
     setLoading(true);
 
     const result = await register(formData.name, formData.email, formData.password);
-    
+
     setLoading(false);
 
     if (result.success) {
@@ -130,7 +130,7 @@ function Register() {
               autoComplete="new-password"
             />
             <small className="form-help">
-              Au moins 8 caractères avec majuscule, minuscule et chiffre
+              Au moins 8 caractères, majuscule, minuscule, chiffre et caractère spécial (!@#$%^&*)
             </small>
           </div>
 
@@ -148,8 +148,8 @@ function Register() {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
             disabled={loading}
           >

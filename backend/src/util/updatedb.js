@@ -1,31 +1,43 @@
+const chatModel = require('../models/chats.js')
 const userModel = require('../models/users.js')
 const bcrypt = require('bcrypt')
 const refreshTokenModel = require('../models/refreshToken.js')
+const aiModelModel = require('../models/aiModels.js')
+const requestModel = require('../models/requests.js')
 const db = require('../models/database.js')
 
-async function updatedb () {
+async function updatedb() {
   try {
+    userModel.hasMany(chatModel, { foreignKey: 'userId' })
+    chatModel.belongsTo(userModel, { foreignKey: 'userId', allowNull: false })
+
+    userModel.hasMany(requestModel, { foreignKey: 'userId' })
+    requestModel.belongsTo(userModel, { foreignKey: 'userId', allowNull: false })
+
+    aiModelModel.hasMany(requestModel, { foreignKey: 'aiModelId' })
+    requestModel.belongsTo(aiModelModel, { foreignKey: 'aiModelId', allowNull: false })
+
     console.log('Synchronizing database...')
-    
+
     await db.sync({ force: true })
-    
+
     console.log('Base de donnees creee.')
     console.log('Creating default users...')
-    
+
     await userModel.create({
       name: 'Admin User',
       email: 'admin@example.com',
       passhash: await bcrypt.hash('Admin@123', 10),
       isAdmin: true
     })
-    
+
     await userModel.create({
       name: 'John Doe',
       email: 'john.doe@example.com',
       passhash: await bcrypt.hash('User@123', 10),
       isAdmin: false
     })
-    
+
     const passhash = await bcrypt.hash('123456', 10)
     console.log(passhash)
     await userModel.create({
@@ -34,14 +46,45 @@ async function updatedb () {
       passhash,
       isAdmin: false
     })
-    
+
+    await userModel.create({
+      name: 'xephi32',
+      email: 'xephi32@example.com',
+      passhash: await bcrypt.hash('Admin@123', 10),
+      isAdmin: true
+    })
+
+    await userModel.create({
+      name: 'Test User',
+      email: 'test@example.com',
+      passhash: await bcrypt.hash('User@123', 10),
+      isAdmin: false
+    })
+
+    console.log('Seeding AI Models...')
+    // Check if models exist first to avoid duplicates if running multiple times without force:true
+    const count = await aiModelModel.count()
+    if (count === 0) {
+      await aiModelModel.bulkCreate([
+        { name: 'Llama 2', description: 'Meta open source LLM', dockerImage: 'llama2' },
+        { name: 'Mistral 7B', description: 'Powerful 7B model by Mistral AI', dockerImage: 'mistral' },
+        { name: 'CodeLlama', description: 'Code specialized model', dockerImage: 'codellama' },
+        { name: 'Phi-2', description: 'Small but mighty 2.7B model', dockerImage: 'phi' },
+        { name: 'Gemma 2B', description: 'Google lightweight model', dockerImage: 'gemma:2b' },
+        { name: 'TinyLlama', description: 'Ultra-fast 1.1B model', dockerImage: 'tinyllama' },
+        { name: 'Qwen 2.5', description: 'Alibaba multilingual model', dockerImage: 'qwen2.5' },
+        { name: 'DeepSeek Coder', description: 'Specialized coding assistant', dockerImage: 'deepseek-coder' },
+        { name: 'Llama 3.2', description: 'Latest Meta model', dockerImage: 'llama3.2' }
+      ])
+    }
+
     console.log('Default users created:')
     console.log('   - admin@example.com (password: Admin@123) [ADMIN]')
     console.log('   - john.doe@example.com (password: User@123)')
     console.log('   - Sebastien.Viardot@grenoble-inp.fr (password: 123456)')
     console.log('')
     console.log('WARNING: Change these default passwords in production!')
-    
+
     await db.close()
     console.log('Database initialization complete!')
   } catch (error) {

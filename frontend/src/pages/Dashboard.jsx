@@ -9,7 +9,7 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <Navbar />
-      
+
       <div className="dashboard-container">
         <div className="dashboard-header">
           <h1>Tableau de bord</h1>
@@ -29,7 +29,7 @@ function Dashboard() {
           <div className="card"
             onClick={() => navigate('/unauthorized')}
             style={{ cursor: 'pointer' }}
-            >
+          >
             <div className="card-icon"></div>
             <h3>Déploiements actifs</h3>
             <p className="card-value">0</p>
@@ -38,8 +38,8 @@ function Dashboard() {
             </p>
           </div>
 
-           <div 
-            className="card clickable" 
+          <div
+            className="card clickable"
             onClick={() => navigate('/chat')}
             style={{ cursor: 'pointer' }}
           >
@@ -54,7 +54,7 @@ function Dashboard() {
           <div className="card"
             onClick={() => navigate('/requests')}
             style={{ cursor: 'pointer' }}
-            >
+          >
             <div className="card-icon"></div>
             <h3>Votre profil</h3>
             <p className="card-info">
@@ -67,22 +67,22 @@ function Dashboard() {
         <div className="quick-actions">
           <h2>Actions rapides</h2>
           <div className="actions-grid">
-            <button className="action-btn">
-              <span className="action-icon"></span>
+            <button className="action-btn" onClick={() => navigate('/requests')}>
+              <span className="action-icon">🚀</span>
               <span>Déployer un modèle</span>
             </button>
-            <button className="action-btn">
-              <span className="action-icon"></span>
+            <button className="action-btn" onClick={() => navigate('/dashboard')}>
+              <span className="action-icon">📊</span>
               <span>Voir les statistiques</span>
             </button>
-            <button className="action-btn">
-              <span className="action-icon"></span>
+            <button className="action-btn" onClick={() => window.open('https://ollama.com', '_blank')}>
+              <span className="action-icon">📚</span>
               <span>Documentation</span>
             </button>
             {user?.role === 'Admin' && (
-              <button className="action-btn admin">
-                <span className="action-icon"></span>
-                <span>Gestion utilisateurs</span>
+              <button className="action-btn admin" onClick={() => navigate('/admin/requests')}>
+                <span className="action-icon">👥</span>
+                <span>Gestion demandes</span>
               </button>
             )}
           </div>

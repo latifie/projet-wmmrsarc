@@ -6,10 +6,20 @@ router.use('/', (req, res, next) => {
   next()
 })
 
+// Health check route
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend is running' })
+})
+
 // Authentication routes
 router.use('/auth', require('./auth'))
 
 // User routes
 router.use('/users', require('./user'))
+
+// Chat routes
+router.use('/chats', require('./chat'))
+router.use('/ai-models', require('./aiModel'))
+router.use('/requests', require('./request'))
 
 module.exports = router

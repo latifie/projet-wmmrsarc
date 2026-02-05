@@ -4,12 +4,38 @@ import axios from '../api/axios';
 
 function AdminRequests() {
   const [requests, setRequests] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [chatStatuses, setChatStatuses] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchRequests();
+    fetchChats();
   }, []);
+
+  // Poll chat statuses
+  useEffect(() => {
+    if (chats.length === 0) return;
+
+    const checkAllStatuses = async () => {
+      const statuses = {};
+      for (const chat of chats) {
+        try {
+          const response = await axios.get(`/api/chats/${chat.id}/status`);
+          statuses[chat.id] = response.data.data;
+        } catch (err) {
+          statuses[chat.id] = { modelLoaded: false, containerReady: false };
+        }
+      }
+      setChatStatuses(statuses);
+    };
+
+    checkAllStatuses();
+    const interval = setInterval(checkAllStatuses, 10000);
+
+    return () => clearInterval(interval);
+  }, [chats]);
 
   const fetchRequests = async () => {
     try {
@@ -22,11 +48,21 @@ function AdminRequests() {
     }
   };
 
+  const fetchChats = async () => {
+    try {
+      const res = await axios.get('/api/chats');
+      setChats(res.data.data || []);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    }
+  };
+
   const handleApprove = async (id) => {
     if (!confirm('Approuver cette demande ?')) return;
     try {
       await axios.post(`/api/requests/${id}/approve`);
       fetchRequests();
+      fetchChats(); // Refresh chats list
     } catch (error) {
       alert('Erreur : ' + (error.response?.data?.message || 'Erreur inconnue'));
     }
@@ -43,7 +79,7 @@ function AdminRequests() {
     }
   };
 
-  const filtered = requests.filter(r => 
+  const filtered = requests.filter(r =>
     filter === 'all' ? true : r.status === filter
   );
 
@@ -65,7 +101,7 @@ function AdminRequests() {
   return (
     <div className="page">
       <Navbar />
-      
+
       <div className="container" style={{ maxWidth: '1200px', padding: '48px 24px' }}>
         <div className="page-header">
           <div>
@@ -169,10 +205,10 @@ function AdminRequests() {
                   )}
 
                   {req.status === 'rejected' && req.rejectionReason && (
-                    <div style={{ 
-                      padding: '12px', 
-                      background: '#fef2f2', 
-                      borderRadius: '6px', 
+                    <div style={{
+                      padding: '12px',
+                      background: '#fef2f2',
+                      borderRadius: '6px',
                       fontSize: '13px',
                       color: '#991b1b',
                       marginTop: '12px'
@@ -185,6 +221,62 @@ function AdminRequests() {
             })}
           </div>
         )}
+
+        {/* Deployed Chats Section */}
+        <div style={{ marginTop: '48px' }}>
+          <h2 style={{ marginBottom: '24px' }}>Chats déployés</h2>
+          {chats.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px', color: '#9b9b9b' }}>
+              <div style={{ fontSize: '64px', marginBottom: '16px' }}>💬</div>
+              <h3>Aucun chat déployé</h3>
+            </div>
+          ) : (
+            <div className="list-grid">
+              {chats.map(chat => {
+                const status = chatStatuses[chat.id] || { modelLoaded: false, containerReady: false };
+                const progress = status.downloadProgress;
+
+                const statusIcon = status.modelLoaded && status.containerReady ? '✅' :
+                  (progress && progress.percent > 0) || status.containerReady ? '⏳' : '🔄';
+                const statusText = status.modelLoaded && status.containerReady ? 'Prêt' :
+                  progress && progress.percent > 0 ? `Téléchargement: ${progress.percent}%` :
+                    status.containerReady ? 'Téléchargement en cours' : 'Démarrage...';
+                const statusColor = status.modelLoaded && status.containerReady ? '#10b981' :
+                  status.containerReady ? '#f59e0b' : '#6b7280';
+
+                return (
+                  <div key={chat.id} className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div>
+                        <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>
+                          {chat.model}
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '8px' }}>
+                          Chat ID: {chat.id}
+                        </p>
+                        <div style={{ fontSize: '12px', color: '#9b9b9b' }}>
+                          {chat.url}
+                        </div>
+                      </div>
+                      <div style={{
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        background: statusColor + '20',
+                        color: statusColor,
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        height: 'fit-content',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {statusIcon} {statusText}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
