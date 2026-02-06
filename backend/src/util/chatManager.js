@@ -10,6 +10,18 @@ module.exports = {
         var port = 20000 + id
 
         try {
+            // Cleanup existing container if any (handling restart/DB reset scenarios)
+            const existingContainer = docker.getContainer(container_name);
+            try {
+                const info = await existingContainer.inspect();
+                if (info) {
+                    console.log(`Container ${container_name} already exists. Removing...`);
+                    await existingContainer.remove({ force: true });
+                }
+            } catch (e) {
+                // Container doesn't exist, ignore
+            }
+
             console.log(`Attempting to create container ${container_name} on port ${port}...`)
             const container = await docker.createContainer({
                 Image: 'ollama/ollama',
@@ -53,6 +65,23 @@ module.exports = {
                 total: 0,
                 status: 'starting'
             });
+
+            // Wait for Ollama to be ready
+            let retries = 10;
+            while (retries > 0) {
+                try {
+                    await axios.get(`${containerUrl}/api/tags`, { timeout: 2000 });
+                    break;
+                } catch (err) {
+                    console.log(`[MODEL PULL] Waiting for Ollama at ${containerUrl}... (${retries} retries left)`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    retries--;
+                }
+            }
+
+            if (retries === 0) {
+                throw new Error('Ollama container failed to start in time');
+            }
 
             // Call Ollama API to pull the model with streaming
             const response = await axios.post(`${containerUrl}/api/pull`, {

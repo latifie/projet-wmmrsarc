@@ -106,7 +106,30 @@ module.exports = {
       })
 
       // Get download progress from cache (parse ID to int as cache keys are integers)
-      const downloadProgress = progressCache.getProgress(parseInt(id, 10));
+      let downloadProgress = progressCache.getProgress(parseInt(id, 10));
+
+      // SELF-HEALING: If model not loaded and no progress tracked (e.g. after restart), resume download
+      if (!modelLoaded && !downloadProgress) {
+        console.log(`[SELF-HEAL] Chat ${id}: Model not loaded and no progress. Attempting to resume download...`);
+
+        // Find the docker image name for this chat model
+        const aiModels = require('../models/aiModels.js');
+        const aiModel = await aiModels.findOne({ where: { name: chat.model } });
+
+        if (aiModel) {
+          container.pullModel(chat.url, aiModel.dockerImage, parseInt(id, 10)).catch(err => {
+            console.error(`[SELF-HEAL] Failed to restart pull for chat ${id}:`, err.message);
+          });
+
+          // Set temporary status to indicate restarting
+          downloadProgress = {
+            percent: 0,
+            status: 'restarting download'
+          };
+        } else {
+          console.error(`[SELF-HEAL] Could not find AI Model entry for ${chat.model}`);
+        }
+      }
 
       res.json({
         status: true,

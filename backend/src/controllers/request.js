@@ -95,8 +95,15 @@ module.exports = {
             })
 
             // Deploy Container
-            const url = await container.createInstance(chat.id)
-            await chatModel.update({ url }, { where: { id: chat.id } })
+            let url;
+            try {
+                url = await container.createInstance(chat.id)
+                await chatModel.update({ url }, { where: { id: chat.id } })
+            } catch (deployError) {
+                console.error('Container deployment failed, rolling back chat creation:', deployError.message);
+                await chatModel.destroy({ where: { id: chat.id } });
+                throw deployError;
+            }
 
             // Pull the AI model (async, don't wait for completion to avoid timeout)
             console.log(`Initiating model pull for ${request.aiModel.dockerImage}...`)
@@ -110,7 +117,7 @@ module.exports = {
             res.json({ status: true, message: 'Request approved and deployed', data: { chatId: chat.id, url } })
         } catch (err) {
             console.error(err)
-            throw new CodeError('Deployment failed', status.INTERNAL_SERVER_ERROR)
+            throw new CodeError('Deployment failed: ' + err.message, status.INTERNAL_SERVER_ERROR)
         }
     },
 
