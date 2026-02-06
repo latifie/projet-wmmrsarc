@@ -2,3 +2,6 @@ node_modules
 package-lock.json
 *.log
 backend/swagger_output.json
+
+# Fichier de contexte (non versionné)
+CONTEXTE.md
