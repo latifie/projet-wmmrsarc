@@ -15,14 +15,14 @@ function Requests() {
   useEffect(() => {
     Promise.all([
       axios.get('/api/requests').then(r => setRequests(r.data.data || [])),
-      axios.get('/api/ai-models').then(r => setModels(r.data.data || []))
+      axios.get('/api/models').then(r => setModels(r.data.data || []))
     ]).finally(() => setLoading(false));
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedModel) return setError('Sélectionnez un modèle');
-    
+
     try {
       await axios.post('/api/requests', { aiModelId: parseInt(selectedModel) });
       setShowModal(false);
@@ -52,7 +52,7 @@ function Requests() {
   return (
     <div className="page">
       <Navbar />
-      
+
       <div className="container" style={{ maxWidth: '1000px', padding: '48px 24px' }}>
         <div className="page-header">
           <div>
@@ -99,16 +99,16 @@ function Requests() {
                       {status.text}
                     </span>
                   </div>
-                  
+
                   <div style={{ fontSize: '12px', color: '#9b9b9b', marginBottom: '12px' }}>
                     Demande #{req.id} • {new Date(req.createdAt).toLocaleDateString('fr-FR')}
                   </div>
 
                   {req.status === 'rejected' && req.rejectionReason && (
-                    <div style={{ 
-                      padding: '12px', 
-                      background: '#fef2f2', 
-                      borderRadius: '6px', 
+                    <div style={{
+                      padding: '12px',
+                      background: '#fef2f2',
+                      borderRadius: '6px',
                       fontSize: '13px',
                       color: '#991b1b',
                       marginBottom: '12px'
@@ -118,7 +118,7 @@ function Requests() {
                   )}
 
                   {req.status === 'approved' && req.instanceId && (
-                    <button 
+                    <button
                       className="btn btn-secondary"
                       onClick={() => navigate(`/instances/${req.instanceId}`)}
                       style={{ width: '100%', marginTop: '8px' }}
