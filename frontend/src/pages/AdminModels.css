@@ -1,0 +1,235 @@
+.admin-page {
+    min-height: 100vh;
+    background-color: #f5f7fa;
+}
+
+.admin-models-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-models-container h1 {
+    margin-bottom: 30px;
+    color: #333;
+}
+
+/* Tabs */
+.tabs-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background-color: #e9ecef;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background-color: #dee2e6;
+    color: #495057;
+}
+
+.tab-btn.active {
+    background-color: white;
+    color: #007bff;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tab-content {
+    background: white;
+    border-radius: 0 8px 8px 8px;
+    /* Top left square if first tab active, but keeping simple */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    min-height: 400px;
+}
+
+/* Sections */
+.models-section {
+    /* Previously had background and padding, now handled by tab-content wrapper */
+    /* background: white; 
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+}
+
+.models-section h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #444;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+/* Search Form */
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    max-width: 600px;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+.search-form button {
+    padding: 12px 24px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.search-form button:hover {
+    background-color: #0056b3;
+}
+
+.search-form button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Search Results */
+.search-results ul {
+    list-style: none;
+    padding: 0;
+}
+
+.model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #fdfdfd;
+    transition: box-shadow 0.2s;
+}
+
+.model-item:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.model-info strong {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.model-info p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.btn-add {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-add:hover {
+    background-color: #218838;
+}
+
+.btn-add:disabled {
+    background-color: #e0e0e0;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* Table */
+.models-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.models-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.models-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.models-table tr:last-child td {
+    border-bottom: none;
+}
+
+.models-table code {
+    background-color: #f1f3f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #e83e8c;
+}
+
+.btn-delete {
+    background-color: #fff;
+    color: #dc3545;
+    padding: 8px 16px;
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Messages */
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+}

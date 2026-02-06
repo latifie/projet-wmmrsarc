@@ -8,6 +8,7 @@ import Chat from './pages/Chat';
 import Unauthorized from './pages/Unauthorized';
 import Requests from './pages/Requests';
 import AdminRequests from './pages/AdminRequests';
+import AdminModels from './pages/AdminModels';
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
-          
+
           <Route
             path="/dashboard"
             element={
@@ -53,7 +54,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          
+
           <Route
             path="/admin"
             element={
@@ -67,13 +68,10 @@ function App() {
           />
 
           <Route
-            path="/models"
+            path="/admin/models"
             element={
-              <PrivateRoute>
-                <div>
-                  <h1>Modèles LLM</h1>
-                  <p>Liste des modèles disponibles (à implémenter)</p>
-                </div>
+              <PrivateRoute requireAdmin>
+                <AdminModels />
               </PrivateRoute>
             }
           />

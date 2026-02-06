@@ -27,13 +27,15 @@ function Navbar() {
           <Link to="/requests" className="navbar-link">
             Demandes
           </Link>
-          <Link to="/models" className="navbar-link">
-            Modèles
-          </Link>
           {isAdmin && (
-            <Link to="/admin/requests" className="navbar-link admin">
-              Administration
-            </Link>
+            <>
+              <Link to="/admin/models" className="navbar-link">
+                Gérer les Modèles
+              </Link>
+              <Link to="/admin/requests" className="navbar-link admin">
+                Administration
+              </Link>
+            </>
           )}
         </div>
 
