@@ -53,10 +53,24 @@ module.exports = {
 
     try {
       const axios = require('axios')
+      const aiModels = require('../models/aiModels.js')
+
+      // Resolve the correct model tag from database
+      const aiModel = await aiModels.findOne({ where: { name: chat.model } })
+      let modelTag = chat.model.toLowerCase().replace(/\s+/g, '') // Fallback
+
+      if (aiModel) {
+        // Remove 'ollama/' prefix if present (e.g. 'ollama/gemma:2b' -> 'gemma:2b')
+        modelTag = aiModel.dockerImage.replace(/^ollama\//, '')
+      } else {
+        console.warn(`[WARNING] Model ${chat.model} not found in aiModels table, using fallback tag: ${modelTag}`)
+      }
+
+      console.log(`[CHAT] Sending message to ${chat.url} with model ${modelTag}`)
 
       // Proxy request to Ollama
       const response = await axios.post(`${chat.url}/api/chat`, {
-        model: chat.model.toLowerCase().replace(/\s+/g, ''),
+        model: modelTag,
         messages: [{ role: 'user', content: message }],
         stream: false
       }, {
