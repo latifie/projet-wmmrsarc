@@ -147,10 +147,10 @@ a --> DELETE_INST
 - ✅ Validation des mots de passe (complexité requise)
 - ✅ Middleware d'authentification et d'autorisation (verifyToken, isAdmin, isOwnerOrAdmin)
 - ✅ Documentation API automatique avec Swagger
-- ⏳ Sélection de modèles IA (à implémenter)
-- ⏳ Création de demandes (à implémenter)
-- ⏳ Gestion des demandes par admin (à implémenter)
-- ⏳ Gestion des instances Docker (à implémenter)
+- ✅ Sélection de modèles IA (implémenté)
+- ✅ Création de demandes (implémenté)
+- ✅ Gestion des demandes par admin (implémenté)
+- ✅ Gestion des instances Docker (implémenté via Chat)
 
 ### Maquettes
 
@@ -204,21 +204,37 @@ Documentation Swagger disponible sur `/doc` lorsque le serveur est démarré.
 | `/api/users` | ✅ TOKEN | | | | Liste tous les utilisateurs (id, name, email) |
 | `/api/users/:id` | | | ✅ TOKEN (OWNER/ADMIN) | ✅ TOKEN (ADMIN) | Mettre à jour / Supprimer un utilisateur |
 
-#### Modèles IA
+| `/api/ai-models` | ✅ | | | | Liste des modèles IA disponibles |
+| `/api/ai-models/:id` | ✅ | | | | Détails d'un modèle IA |
 
-| ENDPOINT | GET | POST | PUT | DELETE | Description |
-|----------|-----|------|-----|--------|-------------|
-| `/api/ai-models` | ⏳ | | | | Liste des modèles IA disponibles (à implémenter) |
-| `/api/ai-models/:id` | ⏳ | | | | Détails d'un modèle IA (à implémenter) |
+#### Chat et Modèles IA
+
+**Fonctionnement des Tags :**
+Le système gère automatiquement la correspondance entre les noms d'affichage (ex: "Gemma 2B") et les tags Docker attendus par Ollama (ex: `gemma:2b`). Cette résolution est effectuée via la table `ai_models` de la base de données.
+
+**Self-Healing (Auto-réparation) :**
+Si un téléchargement de modèle est interrompu (ex: redémarrage serveur), le système détecte automatiquement l'état incomplet lors de la prochaine vérification de statut et relance le téléchargement (pull) sans intervention manuelle.
+
+#### Dépannage (Troubleshooting)
+
+**Erreur `SQLITE_READONLY` :**
+Si vous rencontrez cette erreur dans les logs, cela signifie que la base de données est verrouillée par un autre processus (souvent un serveur précédent mal arrêté).
+*Solution :*
+1. Arrêter le serveur (Ctrl+C).
+2. Vérifier les processus : `fuser -k 3000/tcp`.
+3. Redémarrer : `npm start dev`.
+
+**Modèle introuvable ("Model not found") :**
+Assurez-vous que le modèle demandé existe dans la table `ai_models` et que son champ `dockerImage` correspond exactement au tag Ollama (ex: `llama2`, `gemma:2b`).
 
 #### Demandes (Tickets)
 
 | ENDPOINT | GET | POST | PUT | DELETE | Description |
 |----------|-----|------|-----|--------|-------------|
-| `/api/requests` | ⏳ | ⏳ | | | Liste ses demandes / Créer une demande (à implémenter) |
-| `/api/requests/:id` | ⏳ | | | | Détails d'une demande (à implémenter) |
-| `/api/requests/:id/approve` | | ⏳ | | | Valider une demande → Déploie l'instance (à implémenter) |
-| `/api/requests/:id/reject` | | ⏳ | | | Rejeter une demande (à implémenter) |
+| `/api/requests` | ✅ TOKEN | ✅ TOKEN | | | Liste ses demandes / Créer une demande |
+| `/api/requests/:id` | ✅ TOKEN | | | | Détails d'une demande |
+| `/api/requests/:id/approve` | | ✅ ADMIN | | | Valider une demande → Déploie l'instance |
+| `/api/requests/:id/reject` | | ✅ ADMIN | | | Rejeter une demande |
 
 #### Instances (Chats déployés)
 
@@ -230,7 +246,7 @@ Documentation Swagger disponible sur `/doc` lorsque le serveur est démarré.
 | `/api/instances/:id/stop` | | ⏳ | | | Arrêter une instance (à implémenter) |
 | `/api/instances/:id/restart` | | ⏳ | | | Redémarrer une instance (à implémenter) |
 | `/api/instances/:id/logs` | ⏳ | | | | Voir les logs d'une instance (à implémenter) |
-| `/api/instances/:id` | | | | ⏳ | Supprimer une instance (à implémenter) |
+| `/api/instances/:id` | | | | ⏳ | Supprimer une instance (Note: géré via suppression de Chat) |
 
 **Légende :**
 - ✅ = Route disponible et implémentée
