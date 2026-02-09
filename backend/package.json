@@ -10,7 +10,7 @@
         "start": "npm run doc && npm run updatedb  && node src/server.js",
         "startdev": "npm run doc && npm run updatedb && npx nodemon src/server.js",
         "startdev:proxyreact": "PROXYREACT=true npm run startdev",
-        "test": "npm run doc && DB=bdtest.sqlite npm run updatedb && DB=bdtest.sqlite jest --coverage"
+        "test": "npm run doc && DB=bdtest.sqlite npm run updatedb && DB=bdtest.sqlite jest --env=node --coverage"
     },
     "keywords": [
         "express",
@@ -51,6 +51,7 @@
         "eslint-plugin-node": "^11.1.0",
         "eslint-plugin-promise": "^5.2.0",
         "jest": "^27.4.7",
+        "jest-environment-node": "^27.5.1",
         "supertest": "^6.2.2"
     }
 }

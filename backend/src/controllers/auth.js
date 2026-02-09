@@ -8,31 +8,31 @@ const refreshTokenModel = require('../models/refreshToken.js')
 const { verifyRefreshToken } = require('../middleware/auth.js')
 
 require('mandatoryenv').load([
-  'ACCESS_TOKEN_SECRET', 
+  'ACCESS_TOKEN_SECRET',
   'REFRESH_TOKEN_SECRET',
   'ACCESS_TOKEN_EXPIRY',
   'REFRESH_TOKEN_EXPIRY'
 ])
 
-const { 
-  ACCESS_TOKEN_SECRET, 
+const {
+  ACCESS_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET,
   ACCESS_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY
 } = process.env
 
 // Fonction de validation du mot de passe
-function validPassword (password) {
+function validPassword(password) {
   return /^(?=.*[\d])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*])[\w!@#$%^&*]{8,}$/.test(password)
 }
 
 // Générer un access token
-function generateAccessToken (user) {
+function generateAccessToken(user) {
   return jwt.sign(
-    { 
+    {
       id: user.id,
-      email: user.email, 
-      isAdmin: user.isAdmin 
+      email: user.email,
+      isAdmin: user.isAdmin
     },
     ACCESS_TOKEN_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY }
@@ -40,11 +40,12 @@ function generateAccessToken (user) {
 }
 
 // Générer un refresh token
-function generateRefreshToken (user) {
+function generateRefreshToken(user) {
   return jwt.sign(
-    { 
+    {
       id: user.id,
-      email: user.email 
+      email: user.email,
+      random: Math.random().toString(36).substring(7)
     },
     REFRESH_TOKEN_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRY }
@@ -52,7 +53,7 @@ function generateRefreshToken (user) {
 }
 
 // Calculer la date d'expiration du refresh token
-function getRefreshTokenExpiry () {
+function getRefreshTokenExpiry() {
   const expiry = REFRESH_TOKEN_EXPIRY
   const days = parseInt(expiry.replace('d', ''))
   const expiryDate = new Date()
@@ -65,10 +66,10 @@ module.exports = {
    * Register - Inscription d'un nouvel utilisateur
    * POST /api/auth/register
    */
-  async register (req, res) {
+  async register(req, res) {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Register a new user'
-    
+
     if (!has(req.body, ['name', 'email', 'password'])) {
       throw new CodeError('Name, email and password are required', status.BAD_REQUEST)
     }
@@ -93,9 +94,9 @@ module.exports = {
     const passhash = await bcrypt.hash(password, 10)
 
     // Créer l'utilisateur
-    const user = await userModel.create({ 
-      name, 
-      email, 
+    const user = await userModel.create({
+      name,
+      email,
       passhash,
       isAdmin: isAdmin || false
     })
@@ -111,8 +112,8 @@ module.exports = {
       expiresAt: getRefreshTokenExpiry()
     })
 
-    res.status(status.CREATED).json({ 
-      status: true, 
+    res.status(status.CREATED).json({
+      status: true,
       message: 'User registered successfully',
       data: {
         user: {
@@ -131,7 +132,7 @@ module.exports = {
    * Login - Connexion d'un utilisateur
    * POST /api/auth/login
    */
-  async login (req, res) {
+  async login(req, res) {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Login with email and password'
 
@@ -143,21 +144,21 @@ module.exports = {
 
     // Chercher l'utilisateur
     const user = await userModel.findOne({ where: { email } })
-    
+
     if (!user) {
-      return res.status(status.UNAUTHORIZED).json({ 
-        status: false, 
-        message: 'Invalid email or password' 
+      return res.status(status.UNAUTHORIZED).json({
+        status: false,
+        message: 'Invalid email or password'
       })
     }
 
     // Vérifier le mot de passe
     const validPassword = await bcrypt.compare(password, user.passhash)
-    
+
     if (!validPassword) {
-      return res.status(status.UNAUTHORIZED).json({ 
-        status: false, 
-        message: 'Invalid email or password' 
+      return res.status(status.UNAUTHORIZED).json({
+        status: false,
+        message: 'Invalid email or password'
       })
     }
 
@@ -172,8 +173,8 @@ module.exports = {
       expiresAt: getRefreshTokenExpiry()
     })
 
-    res.json({ 
-      status: true, 
+    res.json({
+      status: true,
       message: 'Login successful',
       data: {
         user: {
@@ -192,7 +193,7 @@ module.exports = {
    * Refresh - Rafraîchir l'access token
    * POST /api/auth/refresh
    */
-  async refresh (req, res) {
+  async refresh(req, res) {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Refresh access token'
 
@@ -205,10 +206,10 @@ module.exports = {
     try {
       // Vérifier le refresh token
       const decoded = await verifyRefreshToken(refreshToken)
-      
+
       // Récupérer l'utilisateur
-      const user = await userModel.findOne({ 
-        where: { email: decoded.email } 
+      const user = await userModel.findOne({
+        where: { email: decoded.email }
       })
 
       if (!user) {
@@ -218,17 +219,17 @@ module.exports = {
       // Générer un nouveau access token
       const newAccessToken = generateAccessToken(user)
 
-      res.json({ 
-        status: true, 
+      res.json({
+        status: true,
         message: 'Token refreshed successfully',
         data: {
           accessToken: newAccessToken
         }
       })
     } catch (error) {
-      return res.status(status.UNAUTHORIZED).json({ 
-        status: false, 
-        message: 'Invalid or expired refresh token' 
+      return res.status(status.UNAUTHORIZED).json({
+        status: false,
+        message: 'Invalid or expired refresh token'
       })
     }
   },
@@ -237,7 +238,7 @@ module.exports = {
    * Logout - Déconnexion
    * POST /api/auth/logout
    */
-  async logout (req, res) {
+  async logout(req, res) {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Logout and invalidate refresh token'
 
@@ -249,20 +250,20 @@ module.exports = {
 
     try {
       // Supprimer le refresh token de la base
-      const deleted = await refreshTokenModel.destroy({ 
-        where: { token: refreshToken } 
+      const deleted = await refreshTokenModel.destroy({
+        where: { token: refreshToken }
       })
 
       if (deleted === 0) {
-        return res.status(status.NOT_FOUND).json({ 
-          status: false, 
-          message: 'Refresh token not found' 
+        return res.status(status.NOT_FOUND).json({
+          status: false,
+          message: 'Refresh token not found'
         })
       }
 
-      res.json({ 
-        status: true, 
-        message: 'Logout successful' 
+      res.json({
+        status: true,
+        message: 'Logout successful'
       })
     } catch (error) {
       throw new CodeError('Logout failed', status.INTERNAL_SERVER_ERROR)
@@ -273,13 +274,13 @@ module.exports = {
    * Me - Informations de l'utilisateur connecté
    * GET /api/auth/me
    */
-  async me (req, res) {
+  async me(req, res) {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Get current user information'
-    
+
     // req.user est déjà attaché par le middleware verifyToken
-    res.json({ 
-      status: true, 
+    res.json({
+      status: true,
       message: 'User information retrieved',
       data: {
         user: req.user
