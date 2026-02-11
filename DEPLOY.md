@@ -202,7 +202,15 @@ Le certificat est valable 90 jours. Certbot configure généralement une tâche 
 ```bash
 sudo certbot renew --dry-run
 ```
+### 9. Dépannage Docker
 
+Si vous rencontrez l'erreur `No such image: ollama/ollama:latest`, cela signifie que l'image de base n'est pas présente sur le VPS. Lancez cette commande :
+
+```bash
+docker pull ollama/ollama:latest
+```
+
+Le serveur backend tente de créer des conteneurs à partir de cette image, mais ne la télécharge pas automatiquement si elle est absente.
 ## Dépannage
 
 ### Erreur : "The requested nginx plugin does not appear to be installed"
