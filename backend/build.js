@@ -4,6 +4,14 @@ const JavaScriptObfuscator = require('javascript-obfuscator');
 const path = require('path');
 
 async function build() {
+    console.log('📄 Generating Swagger documentation...');
+    const { execSync } = require('child_process');
+    try {
+        execSync('npm run doc', { stdio: 'inherit' });
+    } catch (e) {
+        console.warn('Warning: Failed to generate documentation', e.message);
+    }
+
     console.log('🧹 Cleaning dist...');
     await fs.remove('dist');
 
