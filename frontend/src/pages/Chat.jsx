@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import './Chat.css';
@@ -12,6 +13,7 @@ function Chat() {
   const [error, setError] = useState(null);
   const [chatStatuses, setChatStatuses] = useState({});
   const messagesEndRef = useRef(null);
+  const [searchParams] = useSearchParams();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,6 +59,17 @@ function Chat() {
       setError('Failed to load chats');
     }
   };
+
+  // Handle URL query param selection
+  useEffect(() => {
+    const chatIdParam = searchParams.get('id');
+    if (chatIdParam && chats.length > 0) {
+      const chatToSelect = chats.find(c => c.id.toString() === chatIdParam);
+      if (chatToSelect && (!selectedChat || selectedChat.id !== chatToSelect.id)) {
+        handleSelectChat(chatToSelect);
+      }
+    }
+  }, [chats, searchParams]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();

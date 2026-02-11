@@ -120,7 +120,7 @@ function Requests() {
                   {req.status === 'approved' && req.instanceId && (
                     <button
                       className="btn btn-secondary"
-                      onClick={() => navigate(`/instances/${req.instanceId}`)}
+                      onClick={() => navigate(`/chat?id=${req.instanceId}`)}
                       style={{ width: '100%', marginTop: '8px' }}
                     >
                       Voir l'instance →
