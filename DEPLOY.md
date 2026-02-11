@@ -143,6 +143,7 @@ Collez-y la configuration suivante (adaptée pour `elza.testing02.statzitz.ovh`)
 ```nginx
 server {
     listen 80;
+    listen [::]:80;
     server_name elza.testing02.statzitz.ovh;
 
     location / {
