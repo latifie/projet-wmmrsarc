@@ -193,3 +193,15 @@ Le certificat est valable 90 jours. Certbot configure généralement une tâche 
 ```bash
 sudo certbot renew --dry-run
 ```
+
+## Dépannage
+
+### Erreur : "The requested nginx plugin does not appear to be installed"
+
+Si vous avez cette erreur sur Alpine Linux, c'est que le plugin n'est pas installé. Lancez :
+
+```bash
+apk add certbot-nginx
+```
+
+Puis réessayez la commande `certbot`.
