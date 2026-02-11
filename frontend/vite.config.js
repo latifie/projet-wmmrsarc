@@ -11,5 +11,8 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    // minify: 'terser', // Removed to use default esbuild
   }
 })
