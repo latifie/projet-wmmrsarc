@@ -128,23 +128,25 @@ Pour sécuriser votre site (HTTPS) et le rendre accessible via un nom de domaine
 
 ### 2. Configuration Nginx
 
-Créez un fichier de configuration pour votre site :
-
+**Pour Ubuntu/Debian :**
 ```bash
-sudo nano /etc/nginx/conf.d/mon-app.conf
-# OU sur certaines distributions (Ubuntu) :
 sudo nano /etc/nginx/sites-available/mon-app
 ```
 
-Collez-y la configuration suivante (remplacez `votre-domaine.com`) :
+**Pour Alpine Linux (votre cas) :**
+```bash
+sudo vi /etc/nginx/http.d/mon-app.conf
+```
+
+Collez-y la configuration suivante (adaptée pour `elza.testing02.statzitz.ovh`) :
 
 ```nginx
 server {
     listen 80;
-    server_name votre-domaine.com www.votre-domaine.com;
+    server_name elza.testing02.statzitz.ovh;
 
     location / {
-        proxy_pass http://localhost:3000; # Redirige vers notre app Node.js (PM2)
+        proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -154,23 +156,32 @@ server {
 }
 ```
 
-Activez le site (seulement si vous avez utilisé `sites-available`) :
+**Pour Ubuntu/Debian uniquement (activer le site) :**
 ```bash
 sudo ln -s /etc/nginx/sites-available/mon-app /etc/nginx/sites-enabled/
 ```
 
+**Pour tous :**
 Vérifiez la configuration et redémarrez Nginx :
 ```bash
+# Vérifier la syntaxe
 sudo nginx -t
+
+# Redémarrer Nginx (Alpine)
 sudo service nginx restart
+# OU
+sudo rc-service nginx restart
+
+# Redémarrer Nginx (Ubuntu)
+sudo systemctl restart nginx
 ```
 
 ### 3. Activer HTTPS (Certificat SSL Gratuit)
 
-Utilisez Certbot pour générer le certificat et modifier automatiquement la configuration Nginx :
+Utilisez Certbot pour générer le certificat :
 
 ```bash
-sudo certbot --nginx -d votre-domaine.com -d www.votre-domaine.com
+sudo certbot --nginx -d elza.testing02.statzitz.ovh
 ```
 
 Suivez les instructions à l'écran. Certbot va automatiquement configurer la redirection HTTP -> HTTPS.
