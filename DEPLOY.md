@@ -1,0 +1,119 @@
+# Guide de Déploiement VPS
+
+Ce guide explique comment déployer l'application sur un serveur VPS Linux (Ubuntu/Debian recommandé).
+
+## Prérequis
+
+- Un VPS avec accès SSH/Terminal.
+- Git installé.
+- Docker et Docker Compose installés (pour les modèles IA).
+- Node.js (v18+) et npm.
+
+## Installation Automatisée
+
+Vous pouvez utiliser le script `setup_vps.sh` fourni pour installer les dépendances nécessaires (Node.js, Docker, PM2) :
+
+```bash
+chmod +x setup_vps.sh
+./setup_vps.sh
+```
+
+## Installation Manuelle
+
+### 1. Récupérer le code
+
+Clonez votre dépôt sur le VPS :
+
+```bash
+git clone <votre-url-repo-gitlab>
+cd <nom-du-dossier>
+git checkout feat/production-build
+```
+
+### 2. Installation des dépendances
+
+Installez les dépendances du backend (cela installera aussi celles du frontend via le script de build) :
+
+```bash
+cd backend
+npm install
+```
+
+### 3. Configuration de l'environnement
+
+Créez le fichier `.env` dans le dossier `backend` :
+
+```bash
+cp .env.example .env 
+# OU créez-le manuellement
+nano .env
+```
+
+Assurez-vous d'avoir les variables suivantes (adaptez selon vos besoins) :
+
+```env
+PORT=3000
+DB=bd.sqlite
+ACCESS_TOKEN_SECRET=votre_secret_super_securise
+REFRESH_TOKEN_SECRET=votre_autre_secret_super_securise
+```
+
+### 4. Build et Obfuscation
+
+Lancez la compilation et l'obfuscation du projet complet (Frontend + Backend) :
+
+```bash
+npm run build:backend
+```
+
+Cela va :
+1. Installer les dépendances frontend.
+2. Compiler le frontend avec Vite.
+3. Obfusquer le code frontend.
+4. Bundler et obfusquer le backend avec esbuild.
+5. Créer un dossier `dist` contenant le serveur prêt à l'emploi.
+
+### 5. Démarrage de l'application
+
+Pour la production, il est recommandé d'utiliser **PM2** pour gérer le processus (redémarrage automatique, logs, etc.).
+
+Installez PM2 globalement :
+```bash
+sudo npm install -g pm2
+```
+
+Démarrez l'application :
+```bash
+pm2 start dist/server.js --name "mon-app-ia"
+pm2 save
+pm2 startup
+```
+
+L'application sera accessible sur `http://<IP-DU-VPS>:3000`.
+
+### 6. (Optionnel) Docker
+
+Assurez-vous que l'utilisateur qui lance l'application a les droits Docker :
+
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+Vérifiez que Docker tourne :
+```bash
+docker ps
+```
+
+## Maintenance
+
+- **Voir les logs** : `pm2 logs mon-app-ia`
+- **Redémarrer** : `pm2 restart mon-app-ia`
+- **Mettre à jour** :
+  ```bash
+  git pull origin feat/production-build
+  cd backend
+  npm install
+  npm run build:backend
+  pm2 restart mon-app-ia
+  ```
