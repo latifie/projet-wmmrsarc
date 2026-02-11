@@ -73,7 +73,15 @@ Cela va :
 4. Bundler et obfusquer le backend avec esbuild.
 5. Créer un dossier `dist` contenant le serveur prêt à l'emploi.
 
-### 5. Démarrage de l'application
+### 5. Initialisation de la Base de Données (Premier lancement)
+
+Avant de démarrer le serveur pour la première fois, vous devez initialiser la base de données et créer l'utilisateur administrateur :
+
+```bash
+npm run updatedb
+```
+
+### 6. Démarrage de l'application
 
 Pour la production, il est recommandé d'utiliser **PM2** pour gérer le processus (redémarrage automatique, logs, etc.).
 
