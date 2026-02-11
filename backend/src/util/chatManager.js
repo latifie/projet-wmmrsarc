@@ -15,14 +15,14 @@ module.exports = {
             try {
                 const info = await existingContainer.inspect();
                 if (info) {
-                    console.log(`Container ${container_name} already exists. Removing...`);
+
                     await existingContainer.remove({ force: true });
                 }
             } catch (e) {
                 // Container doesn't exist, ignore
             }
 
-            console.log(`Attempting to create container ${container_name} on port ${port}...`)
+
             const container = await docker.createContainer({
                 Image: 'ollama/ollama',
                 name: container_name,
@@ -37,9 +37,8 @@ module.exports = {
                 AttachStderr: false
             })
 
-            console.log(`Container ${container_name} created. Starting...`)
+
             await container.start()
-            console.log(`Container ${container_name} started successfully.`)
         } catch (error) {
             console.error(`Failed to create/start container ${container_name}:`, error)
             throw error
@@ -56,7 +55,7 @@ module.exports = {
             // Extract model tag (remove 'ollama/' prefix if present)
             const modelTag = modelName.replace(/^ollama\//, '')
 
-            console.log(`[MODEL PULL] Starting download of ${modelTag} in container at ${containerUrl}...`)
+
 
             // Initialize progress
             progressCache.setProgress(chatId, {
@@ -73,7 +72,7 @@ module.exports = {
                     await axios.get(`${containerUrl}/api/tags`, { timeout: 2000 });
                     break;
                 } catch (err) {
-                    console.log(`[MODEL PULL] Waiting for Ollama at ${containerUrl}... (${retries} retries left)`);
+
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     retries--;
                 }
@@ -106,7 +105,7 @@ module.exports = {
                             const data = JSON.parse(line)
 
                             if (data.status && data.status !== lastStatus) {
-                                console.log(`[MODEL PULL] ${modelTag}: ${data.status}`)
+
                                 lastStatus = data.status
 
                                 progressCache.setProgress(chatId, {
@@ -123,7 +122,7 @@ module.exports = {
                                 const percent = ((downloadedBytes / totalBytes) * 100).toFixed(1)
                                 const mbDownloaded = (downloadedBytes / 1024 / 1024).toFixed(1)
                                 const mbTotal = (totalBytes / 1024 / 1024).toFixed(1)
-                                console.log(`[MODEL PULL] ${modelTag}: ${percent}% (${mbDownloaded}MB / ${mbTotal}MB)`)
+
 
                                 // Update cache
                                 progressCache.setProgress(chatId, {
@@ -140,7 +139,7 @@ module.exports = {
                 })
 
                 response.data.on('end', () => {
-                    console.log(`[MODEL PULL] ✅ ${modelTag} downloaded successfully!`)
+
 
                     progressCache.setProgress(chatId, {
                         percent: 100,

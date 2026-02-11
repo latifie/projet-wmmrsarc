@@ -8,4 +8,4 @@ const token = jwt.sign(
     { expiresIn: '1h' }
 )
 
-console.log(token)
+

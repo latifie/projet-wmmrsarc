@@ -18,7 +18,7 @@ module.exports = {
       user = await userModel.findOne({ where: { email: userEmail } })
     }
     if (!user) throw new CodeError('User does not exist', status.BAD_REQUEST)
-    console.log(`Creating chat (userId = ${user.id}, model = ${model})`)
+
     const chat = await chatModel.create({ model, userId: user.id })
     const url = await container.createInstance(chat.id)
     await chatModel.update({ url }, { where: { id: chat.id } })
@@ -66,7 +66,7 @@ module.exports = {
         console.warn(`[WARNING] Model ${chat.model} not found in aiModels table, using fallback tag: ${modelTag}`)
       }
 
-      console.log(`[CHAT] Sending message to ${chat.url} with model ${modelTag}`)
+
 
       // Proxy request to Ollama
       const response = await axios.post(`${chat.url}/api/chat`, {
@@ -124,7 +124,7 @@ module.exports = {
 
       // SELF-HEALING: If model not loaded and no progress tracked (e.g. after restart), resume download
       if (!modelLoaded && !downloadProgress) {
-        console.log(`[SELF-HEAL] Chat ${id}: Model not loaded and no progress. Attempting to resume download...`);
+
 
         // Find the docker image name for this chat model
         const aiModels = require('../models/aiModels.js');

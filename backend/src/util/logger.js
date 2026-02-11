@@ -16,6 +16,6 @@ const accessLogStream = rfs('access.log', {
 })
 
 module.exports = {
-  dev: morgan('dev'),
+  dev: process.env.NODE_ENV === 'test' ? (req, res, next) => next() : morgan('tiny'),
   combined: morgan('combined', { stream: accessLogStream })
 }

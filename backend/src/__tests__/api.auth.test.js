@@ -52,7 +52,7 @@ describe('Auth Controller', () => {
             .send({ email: user.email, password: user.password })
 
         if (res.statusCode !== 200) {
-            console.log('Login failed response:', res.body)
+
         }
         expect(res.statusCode).toBe(200)
         expect(res.body.status).toBe(true)

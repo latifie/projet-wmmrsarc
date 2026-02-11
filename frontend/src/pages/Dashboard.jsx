@@ -1,10 +1,54 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import api from '../api/axios';
 
 function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    models: 0,
+    deployments: 0,
+    chats: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch models count
+        const modelsRes = await api.get('/api/models');
+        const modelsCount = modelsRes.data.data ? modelsRes.data.data.length : 0;
+
+        // Fetch requests for deployments count
+        // For simple users, we count their approved requests as "active deployments"
+        // For admins, we might want to fetch all requests, but the API endpoint /requests
+        // returns "getMyRequests". There is no public "all active deployments" count for now.
+        // We will use the user's active deployments.
+        const requestsRes = await api.get('/api/requests');
+        const deploymentsCount = requestsRes.data.data
+          ? requestsRes.data.data.filter(r => r.status === 'approved').length
+          : 0;
+
+        // Fetch chats count
+        const chatsRes = await api.get('/api/chats');
+        const chatsCount = chatsRes.data.data ? chatsRes.data.data.length : 0;
+
+        setStats({
+          models: modelsCount,
+          deployments: deploymentsCount,
+          chats: chatsCount
+        });
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="dashboard">
@@ -18,23 +62,23 @@ function Dashboard() {
 
         <div className="dashboard-cards">
           <div className="card">
-            <div className="card-icon"></div>
+            <div className="card-icon">🤖</div>
             <h3>Modèles disponibles</h3>
-            <p className="card-value">5</p>
+            <p className="card-value">{loading ? '-' : stats.models}</p>
             <p className="card-description">
               Llama2, Mistral, CodeLlama, etc.
             </p>
           </div>
 
           <div className="card"
-            onClick={() => navigate('/unauthorized')}
+            onClick={() => navigate('/requests')}
             style={{ cursor: 'pointer' }}
           >
-            <div className="card-icon"></div>
+            <div className="card-icon">🚀</div>
             <h3>Déploiements actifs</h3>
-            <p className="card-value">0</p>
+            <p className="card-value">{loading ? '-' : stats.deployments}</p>
             <p className="card-description">
-              Aucune instance en cours
+              Vos instances en cours
             </p>
           </div>
 
@@ -45,7 +89,7 @@ function Dashboard() {
           >
             <div className="card-icon">💬</div>
             <h3>Conversations</h3>
-            <p className="card-value">0</p>
+            <p className="card-value">{loading ? '-' : stats.chats}</p>
             <p className="card-description">
               Démarrez une conversation
             </p>
@@ -55,7 +99,7 @@ function Dashboard() {
             onClick={() => navigate('/requests')}
             style={{ cursor: 'pointer' }}
           >
-            <div className="card-icon"></div>
+            <div className="card-icon">👤</div>
             <h3>Votre profil</h3>
             <p className="card-info">
               <strong>Email:</strong> {user?.email}<br />

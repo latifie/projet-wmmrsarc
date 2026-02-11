@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
         password
       });
 
-      console.log('Register response:', response.data);
+
 
       // 👇 GÉRER LE FORMAT BACKEND
       const responseData = response.data.data || response.data;
@@ -55,9 +55,9 @@ export function AuthProvider({ children }) {
       console.error('Register error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 
-               error.response?.data?.error || 
-               'Erreur lors de l\'inscription'
+        error: error.response?.data?.message ||
+          error.response?.data?.error ||
+          'Erreur lors de l\'inscription'
       };
     }
   };
@@ -65,26 +65,23 @@ export function AuthProvider({ children }) {
   // Connexion
   const login = async (email, password) => {
     try {
-      console.log('AuthContext: Envoi de la requête login...');
-      
+
+
       const response = await axios.post('/api/auth/login', {
         email,
         password
       });
 
-      console.log('AuthContext: Réponse complète:', response.data);
+
 
       // 👇 GÉRER LE FORMAT BACKEND (data dans data)
       const responseData = response.data.data || response.data;
-      console.log('AuthContext: Response data:', responseData);
+
 
       const { accessToken, refreshToken, user: newUser } = responseData;
 
-      console.log('AuthContext: Tokens extraits:', {
-        accessToken: accessToken ? accessToken.substring(0, 20) + '...' : 'undefined',
-        refreshToken: refreshToken ? refreshToken.substring(0, 20) + '...' : 'undefined',
-        user: newUser
-      });
+
+
 
       if (!accessToken || !refreshToken || !newUser) {
         console.error('Données manquantes:', responseData);
@@ -96,11 +93,11 @@ export function AuthProvider({ children }) {
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(newUser));
 
-      console.log('AuthContext: Données stockées dans localStorage');
+
 
       setUser(newUser);
 
-      console.log('AuthContext: User state mis à jour:', newUser);
+
 
       return { success: true };
     } catch (error) {

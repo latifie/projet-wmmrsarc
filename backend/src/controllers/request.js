@@ -86,7 +86,7 @@ module.exports = {
 
         // Deploy Logic
         try {
-            console.log(`Approving request ${id}. Deploying ${request.aiModel.name}...`)
+            // Deploy Logic
 
             // Create Chat entry
             const chat = await chatModel.create({
@@ -106,7 +106,7 @@ module.exports = {
             }
 
             // Pull the AI model (async, don't wait for completion to avoid timeout)
-            console.log(`Initiating model pull for ${request.aiModel.dockerImage}...`)
+            // Pull the AI model (async, don't wait for completion to avoid timeout)
             container.pullModel(url, request.aiModel.dockerImage, chat.id).catch(err => {
                 console.error(`Background model pull failed for chat ${chat.id}:`, err.message)
             })

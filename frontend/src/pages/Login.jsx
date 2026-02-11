@@ -7,7 +7,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -16,7 +16,7 @@ function Login() {
     setError('');
     setLoading(true);
 
-    console.log('Attempting login...');
+
 
     if (!email || !password) {
       setError('Veuillez remplir tous les champs');
@@ -25,13 +25,13 @@ function Login() {
     }
 
     const result = await login(email, password);
-    
-    console.log('Login result:', result);
+
+
 
     setLoading(false);
 
     if (result.success) {
-      console.log('Login successful, navigating to dashboard...');
+
       navigate('/dashboard');
     } else {
       console.error('Login failed:', result.error);
@@ -80,8 +80,8 @@ function Login() {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary"
             disabled={loading}
           >

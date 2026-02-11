@@ -3,6 +3,16 @@ require('mandatoryenv').load(['DB'])
 const { DB } = process.env
 
 const Sequelize = require('sequelize')
-const config = DB.includes('sqlite') ? { dialect: 'sqlite', storage: DB, logging: (...msg) => console.log(msg) } : DB
-const db = new Sequelize(config)
+let db;
+if (DB.includes('sqlite')) {
+    db = new Sequelize({
+        dialect: 'sqlite',
+        storage: DB,
+        logging: false
+    })
+} else {
+    db = new Sequelize(DB, {
+        logging: false
+    })
+}
 module.exports = db
