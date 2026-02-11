@@ -23,6 +23,25 @@ module.exports = {
             }
 
 
+            // Check if image exists
+            const images = await docker.listImages();
+            const imageExists = images.some(img => img.RepoTags && img.RepoTags.includes('ollama/ollama:latest'));
+
+            if (!imageExists) {
+                console.log('Image ollama/ollama:latest not found, pulling...');
+                await new Promise((resolve, reject) => {
+                    docker.pull('ollama/ollama:latest', (err, stream) => {
+                        if (err) return reject(err);
+                        docker.modem.followProgress(stream, (err, output) => {
+                            if (err) return reject(err);
+                            resolve(output);
+                        }, (event) => {
+                            // Optional: log progress
+                        });
+                    });
+                });
+                console.log('Image pulled successfully');
+            }
             const container = await docker.createContainer({
                 Image: 'ollama/ollama',
                 name: container_name,
