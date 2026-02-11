@@ -15,6 +15,10 @@ if command -v apt-get &> /dev/null; then
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo $PKG_MANAGER install -y nodejs
     
+    # Nginx & Certbot (Ubuntu/Debian)
+    echo "🌐 Installation de Nginx et Certbot..."
+    sudo $PKG_MANAGER install -y nginx certbot python3-certbot-nginx
+
     # Docker (Ubuntu/Debian)
     if ! command -v docker &> /dev/null; then
         sudo $PKG_MANAGER install -y ca-certificates gnupg
@@ -34,9 +38,17 @@ elif command -v apk &> /dev/null; then
     sudo $PKG_MANAGER update
     sudo $PKG_MANAGER add git curl nodejs npm build-base docker docker-cli-compose
     
+    # Nginx & Certbot (Alpine)
+    echo "🌐 Installation de Nginx et Certbot..."
+    sudo $PKG_MANAGER add nginx certbot certbot-nginx
+    
     # Démarrer Docker sur Alpine
     sudo service docker start || sudo rc-service docker start
     sudo rc-update add docker boot
+    
+    # Démarrer Nginx sur Alpine
+    sudo service nginx start || sudo rc-service nginx start
+    sudo rc-update add nginx boot
 else
     echo "❌ Gestionnaire de paquets non supporté (ni apt, ni apk)."
     exit 1

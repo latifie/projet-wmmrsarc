@@ -117,3 +117,68 @@ docker ps
   npm run build:backend
   pm2 restart mon-app-ia
   ```
+
+## Configuration HTTPS (Domaine & SSL)
+
+Pour sécuriser votre site (HTTPS) et le rendre accessible via un nom de domaine sur le port standard (443), nous allons utiliser **Nginx** comme reverse proxy.
+
+### 1. Prérequis
+- Un nom de domaine (ex: `mon-super-site.com`) pointant vers l'IP de votre VPS (Enregistrement A / DNS).
+- Nginx et Certbot installés (le script `setup_vps.sh` le fait automatiquement).
+
+### 2. Configuration Nginx
+
+Créez un fichier de configuration pour votre site :
+
+```bash
+sudo nano /etc/nginx/conf.d/mon-app.conf
+# OU sur certaines distributions (Ubuntu) :
+sudo nano /etc/nginx/sites-available/mon-app
+```
+
+Collez-y la configuration suivante (remplacez `votre-domaine.com`) :
+
+```nginx
+server {
+    listen 80;
+    server_name votre-domaine.com www.votre-domaine.com;
+
+    location / {
+        proxy_pass http://localhost:3000; # Redirige vers notre app Node.js (PM2)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Activez le site (seulement si vous avez utilisé `sites-available`) :
+```bash
+sudo ln -s /etc/nginx/sites-available/mon-app /etc/nginx/sites-enabled/
+```
+
+Vérifiez la configuration et redémarrez Nginx :
+```bash
+sudo nginx -t
+sudo service nginx restart
+```
+
+### 3. Activer HTTPS (Certificat SSL Gratuit)
+
+Utilisez Certbot pour générer le certificat et modifier automatiquement la configuration Nginx :
+
+```bash
+sudo certbot --nginx -d votre-domaine.com -d www.votre-domaine.com
+```
+
+Suivez les instructions à l'écran. Certbot va automatiquement configurer la redirection HTTP -> HTTPS.
+
+### 4. Renouvellement automatique
+
+Le certificat est valable 90 jours. Certbot configure généralement une tâche automatique pour le renouveler. Vous pouvez tester le renouvellement avec :
+
+```bash
+sudo certbot renew --dry-run
+```
