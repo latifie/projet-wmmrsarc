@@ -45,14 +45,17 @@ if (process.env.PROXYREACT) {
   app.use('/', reactProxy)
 }
 
-app.use('/', express.static('../frontend/dist'))
-app.use('/', express.static('../frontend/public'))
-app.use('/', express.static('./src/frontend'))
-// Handle not valid route
-app.use('*', (req, res) => {
-  res
-    .status(404)
-    .json({ status: false, message: 'Endpoint Not Found' })
-})
+const path = require('path');
+
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+app.use(express.static(path.join(__dirname, '../../frontend/public')));
+app.use(express.static(path.join(__dirname, './frontend')));
+
 app.use('/api/requests', requestRoutes);
+
+// Handle React Routing, return all requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
+});
+
 module.exports = app
