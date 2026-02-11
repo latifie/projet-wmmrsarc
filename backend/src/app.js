@@ -53,6 +53,11 @@ app.use(express.static(path.join(__dirname, './frontend')));
 
 app.use('/api/requests', requestRoutes);
 
+// API 404 Handler: Prevent unrecognized API requests from falling through to React
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API Endpoint Not Found' });
+});
+
 // Handle React Routing, return all requests to React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
