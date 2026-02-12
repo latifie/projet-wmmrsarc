@@ -8,6 +8,12 @@ beforeAll(async () => {
     await userModel.destroy({ where: { email: 'testauth@example.com' } })
 })
 
+// Helper to clean up users
+async function cleanupUser(email) {
+    const userModel = require('../models/users')
+    await userModel.destroy({ where: { email } })
+}
+
 afterAll(async () => {
     await db.close()
 })
@@ -60,6 +66,60 @@ describe('Auth Controller', () => {
         const res = await request(app)
             .post('/api/auth/register')
             .send(simpleUser)
+
+        expect(res.statusCode).toBe(201)
+        expect(res.body.status).toBe(true)
+    })
+
+    test('POST /api/auth/register - Should register with only numbers (8 chars)', async () => {
+        const numericUser = {
+            name: 'Numeric User',
+            email: 'numeric@example.com',
+            password: '12345678'
+        }
+
+        const userModel = require('../models/users')
+        await userModel.destroy({ where: { email: numericUser.email } })
+
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send(numericUser)
+
+        expect(res.statusCode).toBe(201)
+        expect(res.body.status).toBe(true)
+    })
+
+    test('POST /api/auth/register - Should register with only uppercase (8 chars)', async () => {
+        const uppercaseUser = {
+            name: 'Uppercase User',
+            email: 'uppercase@example.com',
+            password: 'PASSWORD'
+        }
+
+        const userModel = require('../models/users')
+        await userModel.destroy({ where: { email: uppercaseUser.email } })
+
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send(uppercaseUser)
+
+        expect(res.statusCode).toBe(201)
+        expect(res.body.status).toBe(true)
+    })
+
+    test('POST /api/auth/register - Should register with only special chars (8 chars)', async () => {
+        const specialUser = {
+            name: 'Special User',
+            email: 'special@example.com',
+            password: '!!!!!!!!'
+        }
+
+        const userModel = require('../models/users')
+        await userModel.destroy({ where: { email: specialUser.email } })
+
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send(specialUser)
 
         expect(res.statusCode).toBe(201)
         expect(res.body.status).toBe(true)
