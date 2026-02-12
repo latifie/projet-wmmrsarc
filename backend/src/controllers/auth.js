@@ -71,62 +71,69 @@ module.exports = {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Register a new user'
 
-    if (!has(req.body, ['name', 'email', 'password'])) {
-      throw new CodeError('Name, email and password are required', status.BAD_REQUEST)
-    }
-
-    const { name, email, password, isAdmin = false } = req.body
-
-    // Validation du mot de passe
-    if (!validPassword(password)) {
-      throw new CodeError(
-        'Password must be at least 8 characters',
-        status.BAD_REQUEST
-      )
-    }
-
-    // Vérifier si l'email existe déjà
-    const existingUser = await userModel.findOne({ where: { email } })
-    if (existingUser) {
-      throw new CodeError('Email already registered', status.CONFLICT)
-    }
-
-    // Hash du mot de passe avec 10 rounds (au lieu de 2)
-    const passhash = await bcrypt.hash(password, 10)
-
-    // Créer l'utilisateur
-    const user = await userModel.create({
-      name,
-      email,
-      passhash,
-      isAdmin: isAdmin || false
-    })
-
-    // Générer les tokens
-    const accessToken = generateAccessToken(user)
-    const refreshToken = generateRefreshToken(user)
-
-    // Stocker le refresh token en base
-    await refreshTokenModel.create({
-      token: refreshToken,
-      userId: user.id,
-      expiresAt: getRefreshTokenExpiry()
-    })
-
-    res.status(status.CREATED).json({
-      status: true,
-      message: 'User registered successfully',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          isAdmin: user.isAdmin
-        },
-        accessToken,
-        refreshToken
+    try {
+      if (!has(req.body, ['name', 'email', 'password'])) {
+        throw new CodeError('Nom, email et mot de passe requis', status.BAD_REQUEST)
       }
-    })
+
+      const { name, email, password, isAdmin = false } = req.body
+
+      // Validation du mot de passe
+      if (!validPassword(password)) {
+        throw new CodeError(
+          'Le mot de passe doit contenir au moins 8 caractères',
+          status.BAD_REQUEST
+        )
+      }
+
+      // Vérifier si l'email existe déjà
+      const existingUser = await userModel.findOne({ where: { email } })
+      if (existingUser) {
+        throw new CodeError('Cet email est déjà utilisé', status.CONFLICT)
+      }
+
+      // Hash du mot de passe avec 10 rounds (au lieu de 2)
+      const passhash = await bcrypt.hash(password, 10)
+
+      // Créer l'utilisateur
+      const user = await userModel.create({
+        name,
+        email,
+        passhash,
+        isAdmin: isAdmin || false
+      })
+
+      // Générer les tokens
+      const accessToken = generateAccessToken(user)
+      const refreshToken = generateRefreshToken(user)
+
+      // Stocker le refresh token en base
+      await refreshTokenModel.create({
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: getRefreshTokenExpiry()
+      })
+
+      res.status(status.CREATED).json({
+        status: true,
+        message: 'Inscription réussie',
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            isAdmin: user.isAdmin
+          },
+          accessToken,
+          refreshToken
+        }
+      })
+    } catch (error) {
+      if (error instanceof CodeError) {
+        throw error
+      }
+      throw new CodeError("Erreur lors de l'inscription", status.INTERNAL_SERVER_ERROR)
+    }
   },
 
   /**
@@ -137,57 +144,62 @@ module.exports = {
     // #swagger.tags = ['Authentication']
     // #swagger.summary = 'Login with email and password'
 
-    if (!has(req.body, ['email', 'password'])) {
-      throw new CodeError('Email and password are required', status.BAD_REQUEST)
-    }
-
-    const { email, password } = req.body
-
-    // Chercher l'utilisateur
-    const user = await userModel.findOne({ where: { email } })
-
-    if (!user) {
-      return res.status(status.UNAUTHORIZED).json({
-        status: false,
-        message: 'Invalid email or password'
-      })
-    }
-
-    // Vérifier le mot de passe
-    const validPassword = await bcrypt.compare(password, user.passhash)
-
-    if (!validPassword) {
-      return res.status(status.UNAUTHORIZED).json({
-        status: false,
-        message: 'Invalid email or password'
-      })
-    }
-
-    // Générer les tokens
-    const accessToken = generateAccessToken(user)
-    const refreshToken = generateRefreshToken(user)
-
-    // Stocker le refresh token
-    await refreshTokenModel.create({
-      token: refreshToken,
-      userId: user.id,
-      expiresAt: getRefreshTokenExpiry()
-    })
-
-    res.json({
-      status: true,
-      message: 'Login successful',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          isAdmin: user.isAdmin
-        },
-        accessToken,
-        refreshToken
+    try {
+      if (!has(req.body, ['email', 'password'])) {
+        throw new CodeError('Email et mot de passe requis', status.BAD_REQUEST)
       }
-    })
+
+      const { email, password } = req.body
+
+      // Chercher l'utilisateur
+      const user = await userModel.findOne({ where: { email } })
+
+      if (!user) {
+        return res.status(status.UNAUTHORIZED).json({
+          status: false,
+          message: 'Email ou mot de passe incorrect'
+        })
+      }
+
+      // Vérifier le mot de passe
+      const validPassword = await bcrypt.compare(password, user.passhash)
+
+      if (!validPassword) {
+        return res.status(status.UNAUTHORIZED).json({
+          status: false,
+          message: 'Email ou mot de passe incorrect'
+        })
+      }
+
+      // Générer les tokens
+      const accessToken = generateAccessToken(user)
+      const refreshToken = generateRefreshToken(user)
+
+      // Stocker le refresh token
+      await refreshTokenModel.create({
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: getRefreshTokenExpiry()
+      })
+
+      res.json({
+        status: true,
+        message: 'Connexion réussie',
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            isAdmin: user.isAdmin
+          },
+          accessToken,
+          refreshToken
+        }
+      })
+    } catch (error) {
+      if (error instanceof CodeError) throw error
+      throw new CodeError('Erreur lors de la connexion', status.INTERNAL_SERVER_ERROR)
+    }
   },
 
   /**

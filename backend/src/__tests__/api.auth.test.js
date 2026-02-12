@@ -138,6 +138,8 @@ describe('Auth Controller', () => {
 
         expect(res.statusCode).toBe(400)
         expect(res.body.status).toBe(false)
+        // Check for specific error message or valid bad request status
+        expect(res.statusCode).toBe(400)
     })
 
     test('POST /api/auth/login - Should login successfully', async () => {

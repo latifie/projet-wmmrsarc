@@ -53,11 +53,19 @@ export function AuthProvider({ children }) {
       return { success: true };
     } catch (error) {
       console.error('Register error:', error);
+      let errorMessage = 'Erreur lors de l\'inscription';
+
+      if (!error.response || error.code === 'ERR_NETWORK') {
+        errorMessage = 'Serveur inaccessible. Veuillez réessayer plus tard.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+
       return {
         success: false,
-        error: error.response?.data?.message ||
-          error.response?.data?.error ||
-          'Erreur lors de l\'inscription'
+        error: errorMessage
       };
     }
   };
@@ -102,9 +110,17 @@ export function AuthProvider({ children }) {
       return { success: true };
     } catch (error) {
       console.error('AuthContext: Erreur login:', error);
+      let errorMessage = 'Identifiants invalides';
+
+      if (!error.response || error.code === 'ERR_NETWORK') {
+        errorMessage = 'Serveur inaccessible. Veuillez réessayer plus tard.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
       return {
         success: false,
-        error: error.response?.data?.message || 'Identifiants invalides'
+        error: errorMessage
       };
     }
   };
