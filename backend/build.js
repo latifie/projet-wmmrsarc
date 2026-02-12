@@ -12,6 +12,21 @@ async function build() {
         console.warn('Warning: Failed to generate documentation', e.message);
     }
 
+    console.log('🏗️  Building Frontend...');
+    try {
+        const frontendPath = path.join(__dirname, '../frontend');
+        if (fs.existsSync(frontendPath)) {
+            console.log('   Installing frontend dependencies...');
+            execSync('npm install', { cwd: frontendPath, stdio: 'inherit' });
+            console.log('   Running frontend build...');
+            execSync('npm run build', { cwd: frontendPath, stdio: 'inherit' });
+        } else {
+            console.warn('⚠️  Frontend directory not found at ../frontend');
+        }
+    } catch (e) {
+        console.error('❌ Frontend build failed:', e.message);
+        process.exit(1);
+    }
     console.log('🧹 Cleaning dist...');
     await fs.remove('dist');
 
@@ -65,6 +80,15 @@ async function build() {
     // Copy swagger output if it exists
     if (await fs.pathExists('swagger_output.json')) {
         await fs.copy('swagger_output.json', 'dist/swagger_output.json');
+    }
+
+    // Copy frontend build to dist/frontend
+    const frontendDist = path.join(__dirname, '../frontend/dist');
+    if (await fs.pathExists(frontendDist)) {
+        console.log('📂 Copying frontend assets to dist/frontend...');
+        await fs.copy(frontendDist, 'dist/frontend');
+    } else {
+        console.warn('⚠️  Frontend build not found to copy.');
     }
     // Copy .env example or similar if needed. We assume .env is on the server.
 

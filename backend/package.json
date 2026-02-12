@@ -7,7 +7,7 @@
         "setup": "npm install && npm run doc && npm run updatedb",
         "updatedb": "rm -f ${DB:=bd.sqlite} && node src/util/updatedb.js",
         "doc": "node src/util/swagger.js",
-        "build": "cd ../frontend && npm install && npm run build",
+        "build": "node build.js",
         "build:backend": "node build.js",
         "start": "node dist/server.js",
         "start:dev": "npm run doc && npm run updatedb && npx nodemon src/server.js",
