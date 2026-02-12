@@ -46,6 +46,40 @@ describe('Auth Controller', () => {
         expect(res.body.status).toBe(false)
     })
 
+    test('POST /api/auth/register - Should register with simple password (8 chars)', async () => {
+        const simpleUser = {
+            name: 'Simple User',
+            email: 'simple@example.com',
+            password: 'password'
+        }
+
+        // Clean up before test
+        const userModel = require('../models/users')
+        await userModel.destroy({ where: { email: simpleUser.email } })
+
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send(simpleUser)
+
+        expect(res.statusCode).toBe(201)
+        expect(res.body.status).toBe(true)
+    })
+
+    test('POST /api/auth/register - Should fail with short password (7 chars)', async () => {
+        const shortUser = {
+            name: 'Short User',
+            email: 'short@example.com',
+            password: 'passwor'
+        }
+
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send(shortUser)
+
+        expect(res.statusCode).toBe(400)
+        expect(res.body.status).toBe(false)
+    })
+
     test('POST /api/auth/login - Should login successfully', async () => {
         const res = await request(app)
             .post('/api/auth/login')

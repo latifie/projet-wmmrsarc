@@ -22,8 +22,9 @@ const {
 } = process.env
 
 // Fonction de validation du mot de passe
+// Fonction de validation du mot de passe
 function validPassword(password) {
-  return /^(?=.*[\d])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*])[\w!@#$%^&*]{8,}$/.test(password)
+  return password.length >= 8
 }
 
 // Générer un access token
@@ -79,7 +80,7 @@ module.exports = {
     // Validation du mot de passe
     if (!validPassword(password)) {
       throw new CodeError(
-        'Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number and 1 special character',
+        'Password must be at least 8 characters',
         status.BAD_REQUEST
       )
     }

@@ -40,11 +40,6 @@ function Register() {
       return false;
     }
 
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/.test(password)) {
-      setError('Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (!@#$%^&*)');
-      return false;
-    }
-
     if (password !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas');
       return false;
@@ -130,7 +125,7 @@ function Register() {
               autoComplete="new-password"
             />
             <small className="form-help">
-              Au moins 8 caractères, majuscule, minuscule, chiffre et caractère spécial (!@#$%^&*)
+              Au moins 8 caractères
             </small>
           </div>
 
@@ -163,8 +158,8 @@ function Register() {
             <Link to="/login">Se connecter</Link>
           </p>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
 
