@@ -32,6 +32,9 @@ function Navbar() {
               <Link to="/admin/models" className="navbar-link">
                 Gérer les Modèles
               </Link>
+              <Link to="/admin/users" className="navbar-link">
+                Utilisateurs
+              </Link>
               <Link to="/admin/requests" className="navbar-link admin">
                 Administration
               </Link>

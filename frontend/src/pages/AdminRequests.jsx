@@ -8,6 +8,14 @@ function AdminRequests() {
   const [chatStatuses, setChatStatuses] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [expandedUsers, setExpandedUsers] = useState({});
+
+  const toggleUser = (userId) => {
+    setExpandedUsers(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -137,83 +145,128 @@ function AdminRequests() {
             <h3>Aucune demande</h3>
           </div>
         ) : (
-          <div className="list-grid">
-            {filtered.map(req => {
-              const status = statusConfig[req.status];
+          <div className="requests-list">
+            {Object.entries(
+              filtered.reduce((acc, req) => {
+                const userId = req.user?.id || 'unknown';
+                if (!acc[userId]) acc[userId] = [];
+                acc[userId].push(req);
+                return acc;
+              }, {})
+            ).map(([userId, userRequests]) => {
+              const user = userRequests[0].user;
+              const isExpanded = expandedUsers[userId] !== false; // Default expanded
+
               return (
-                <div key={req.id} className="card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div key={userId} style={{ marginBottom: '24px', border: '1px solid #eee', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div
+                    onClick={() => toggleUser(userId)}
+                    style={{
+                      padding: '16px',
+                      background: '#f9f9f9',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
                     <div>
-                      <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>
-                        {req.aiModel?.name}
-                      </h3>
-                      <p style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '8px' }}>
-                        Demandé par {req.user?.name} ({req.user?.email})
-                      </p>
-                      <div style={{ fontSize: '12px', color: '#9b9b9b' }}>
-                        #{req.id} • {new Date(req.createdAt).toLocaleDateString('fr-FR')}
-                      </div>
+                      <h3 style={{ margin: 0 }}>{user?.name || 'Utilisateur inconnu'}</h3>
+                      <span style={{ fontSize: '12px', color: '#666' }}>{user?.email}</span>
                     </div>
-                    <span style={{
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      background: status.color + '20',
-                      color: status.color,
-                      height: 'fit-content'
-                    }}>
-                      {status.text}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        background: '#e0e0e0',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '12px'
+                      }}>
+                        {userRequests.length} demande{userRequests.length > 1 ? 's' : ''}
+                      </span>
+                      <span>{isExpanded ? '▼' : '▶'}</span>
+                    </div>
                   </div>
 
-                  {req.status === 'pending' && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => handleApprove(req.id)}
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          background: '#10b981',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        ✓ Approuver
-                      </button>
-                      <button
-                        onClick={() => handleReject(req.id)}
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          background: '#ef4444',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        ✕ Rejeter
-                      </button>
-                    </div>
-                  )}
+                  {isExpanded && (
+                    <div className="list-grid" style={{ padding: '16px', background: '#fff' }}>
+                      {userRequests.map(req => {
+                        const status = statusConfig[req.status];
+                        return (
+                          <div key={req.id} className="card">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                              <div>
+                                <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>
+                                  {req.aiModel?.name}
+                                </h3>
+                                <div style={{ fontSize: '12px', color: '#9b9b9b' }}>
+                                  #{req.id} • {new Date(req.createdAt).toLocaleDateString('fr-FR')}
+                                </div>
+                              </div>
+                              <span style={{
+                                padding: '4px 12px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                background: status.color + '20',
+                                color: status.color,
+                                height: 'fit-content'
+                              }}>
+                                {status.text}
+                              </span>
+                            </div>
 
-                  {req.status === 'rejected' && req.rejectionReason && (
-                    <div style={{
-                      padding: '12px',
-                      background: '#fef2f2',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      color: '#991b1b',
-                      marginTop: '12px'
-                    }}>
-                      <strong>Raison :</strong> {req.rejectionReason}
+                            {req.status === 'pending' && (
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  onClick={() => handleApprove(req.id)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '10px',
+                                    background: '#10b981',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: '500'
+                                  }}
+                                >
+                                  ✓ Approuver
+                                </button>
+                                <button
+                                  onClick={() => handleReject(req.id)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '10px',
+                                    background: '#ef4444',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: '500'
+                                  }}
+                                >
+                                  ✕ Rejeter
+                                </button>
+                              </div>
+                            )}
+
+                            {req.status === 'rejected' && req.rejectionReason && (
+                              <div style={{
+                                padding: '12px',
+                                background: '#fef2f2',
+                                borderRadius: '6px',
+                                fontSize: '13px',
+                                color: '#991b1b',
+                                marginTop: '12px'
+                              }}>
+                                <strong>Raison :</strong> {req.rejectionReason}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -221,62 +274,6 @@ function AdminRequests() {
             })}
           </div>
         )}
-
-        {/* Deployed Chats Section */}
-        <div style={{ marginTop: '48px' }}>
-          <h2 style={{ marginBottom: '24px' }}>Chats déployés</h2>
-          {chats.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: '#9b9b9b' }}>
-              <div style={{ fontSize: '64px', marginBottom: '16px' }}>💬</div>
-              <h3>Aucun chat déployé</h3>
-            </div>
-          ) : (
-            <div className="list-grid">
-              {chats.map(chat => {
-                const status = chatStatuses[chat.id] || { modelLoaded: false, containerReady: false };
-                const progress = status.downloadProgress;
-
-                const statusIcon = status.modelLoaded && status.containerReady ? '✅' :
-                  (progress && progress.percent > 0) || status.containerReady ? '⏳' : '🔄';
-                const statusText = status.modelLoaded && status.containerReady ? 'Prêt' :
-                  progress && progress.percent > 0 ? `Téléchargement: ${progress.percent}%` :
-                    status.containerReady ? 'Téléchargement en cours' : 'Démarrage...';
-                const statusColor = status.modelLoaded && status.containerReady ? '#10b981' :
-                  status.containerReady ? '#f59e0b' : '#6b7280';
-
-                return (
-                  <div key={chat.id} className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                      <div>
-                        <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>
-                          {chat.model}
-                        </h3>
-                        <p style={{ fontSize: '13px', color: '#6b6b6b', marginBottom: '8px' }}>
-                          Chat ID: {chat.id}
-                        </p>
-                        <div style={{ fontSize: '12px', color: '#9b9b9b' }}>
-                          {chat.url}
-                        </div>
-                      </div>
-                      <div style={{
-                        padding: '6px 12px',
-                        borderRadius: '12px',
-                        background: statusColor + '20',
-                        color: statusColor,
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        height: 'fit-content',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {statusIcon} {statusText}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

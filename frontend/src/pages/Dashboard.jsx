@@ -103,7 +103,7 @@ function Dashboard() {
             <h3>Votre profil</h3>
             <p className="card-info">
               <strong>Email:</strong> {user?.email}<br />
-              <strong>Rôle:</strong> {user?.role}
+              <strong>Rôle:</strong> {user?.isAdmin ? 'Administrateur' : 'Utilisateur'}
             </p>
           </div>
         </div>

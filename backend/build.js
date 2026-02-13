@@ -50,30 +50,30 @@ async function build() {
         packages: 'external',
     });
 
-    console.log('🔒 Obfuscating...');
-    const distPath = path.join(__dirname, 'dist', 'server.js');
-    const code = await fs.readFile(distPath, 'utf8');
+    // console.log('🔒 Obfuscating...');
+    // const distPath = path.join(__dirname, 'dist', 'server.js');
+    // const code = await fs.readFile(distPath, 'utf8');
 
-    const obfuscationResult = JavaScriptObfuscator.obfuscate(code, {
-        compact: true,
-        controlFlowFlattening: true,
-        deadCodeInjection: true,
-        debugProtection: true, // Be careful with this in production if you need logs
-        disableConsoleOutput: false, // Keep logs for now to debug
-        identifierNamesGenerator: 'hexadecimal',
-        log: false,
-        numbersToExpressions: true,
-        renameGlobals: false,
-        selfDefending: true,
-        simplify: true,
-        splitStrings: true,
-        stringArray: true,
-        stringArrayCallsTransform: true,
-        stringArrayEncoding: ['rc4'],
-        target: 'node'
-    });
+    // const obfuscationResult = JavaScriptObfuscator.obfuscate(code, {
+    //     compact: true,
+    //     controlFlowFlattening: true,
+    //     deadCodeInjection: true,
+    //     debugProtection: true, // Be careful with this in production if you need logs
+    //     disableConsoleOutput: false, // Keep logs for now to debug
+    //     identifierNamesGenerator: 'hexadecimal',
+    //     log: false,
+    //     numbersToExpressions: true,
+    //     renameGlobals: false,
+    //     selfDefending: true,
+    //     simplify: true,
+    //     splitStrings: true,
+    //     stringArray: true,
+    //     stringArrayCallsTransform: true,
+    //     stringArrayEncoding: ['rc4'],
+    //     target: 'node'
+    // });
 
-    await fs.writeFile(distPath, obfuscationResult.getObfuscatedCode());
+    // await fs.writeFile(distPath, obfuscationResult.getObfuscatedCode());
 
     // Copy necessary files
     console.log('📂 Copying assets...');

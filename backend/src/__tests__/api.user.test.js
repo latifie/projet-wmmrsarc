@@ -118,6 +118,41 @@ describe('User Controller', () => {
     })
   })
 
+  describe('Admin Role Management', () => {
+    it('Should allow admin to promote a user', async () => {
+      const res = await request(app)
+        .put(`/api/users/${user2Id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isAdmin: true })
+
+      expect(res.statusCode).toBe(200)
+      const updatedUser = await userModel.findByPk(user2Id)
+      expect(updatedUser.isAdmin).toBe(true)
+    })
+
+    it('Should allow admin to demote a user', async () => {
+      const res = await request(app)
+        .put(`/api/users/${user2Id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isAdmin: false })
+
+      expect(res.statusCode).toBe(200)
+      const updatedUser = await userModel.findByPk(user2Id)
+      expect(updatedUser.isAdmin).toBe(false)
+    })
+
+    it('Should deny user from promoting themselves', async () => {
+      const res = await request(app)
+        .put(`/api/users/${userId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ isAdmin: true })
+
+      expect(res.statusCode).toBe(403)
+      const updatedUser = await userModel.findByPk(userId)
+      expect(updatedUser.isAdmin).toBe(false)
+    })
+  })
+
   describe('DELETE /api/users/:id', () => {
     it('Should deny non-admin from deleting a user', async () => {
       const res = await request(app)

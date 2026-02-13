@@ -7,12 +7,12 @@ const jwt = require('jsonwebtoken')
 require('mandatoryenv').load(['ACCESS_TOKEN_SECRET', 'ACCESS_TOKEN_EXPIRY'])
 const { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY } = process.env
 
-function validPassword (password) {
+function validPassword(password) {
   return /^(?=.*[\d])(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*])[\w!@#$%^&*]{8,}$/.test(password)
 }
 
 module.exports = {
-  async login (req, res) {
+  async login(req, res) {
     // #swagger.tags = ['Users']
     // #swagger.summary = 'Verify credentials of user using email and password and return JWT token'
     // #swagger.parameters['obj'] = { in: 'body', schema: { $email: 'John.Doe@acme.com', $password: '12345'}}
@@ -22,10 +22,10 @@ module.exports = {
     if (user) {
       if (await bcrypt.compare(password, user.passhash)) {
         const token = jwt.sign(
-          { 
+          {
             id: user.id,
             email: user.email,
-            isAdmin: user.isAdmin 
+            isAdmin: user.isAdmin
           },
           ACCESS_TOKEN_SECRET,
           { expiresIn: ACCESS_TOKEN_EXPIRY || '1h' }
@@ -36,7 +36,7 @@ module.exports = {
     }
     res.status(status.FORBIDDEN).json({ status: false, message: 'Wrong email/password' })
   },
-  async newUser (req, res) {
+  async newUser(req, res) {
     // #swagger.tags = ['Users']
     // #swagger.summary = 'New User'
     // #swagger.parameters['obj'] = { in: 'body', description:'Name and email', schema: { $name: 'John Doe', $email: 'John.Doe@acme.com', $password: '1m02P@SsF0rt!'}}
@@ -46,21 +46,24 @@ module.exports = {
     await userModel.create({ name, email, passhash: await bcrypt.hash(password, 10) })
     res.json({ status: true, message: 'User Added' })
   },
-  async getUsers (req, res) {
+  async getUsers(req, res) {
     // TODO : verify if the token is valid...
     // #swagger.tags = ['Users']
     // #swagger.summary = 'Get All users'
-    const data = await userModel.findAll({ attributes: ['id', 'name', 'email'] })
+    const data = await userModel.findAll({ attributes: ['id', 'name', 'email', 'isAdmin'] })
     res.json({ status: true, message: 'Returning users', data })
   },
-  async updateUser (req, res) {
+  async updateUser(req, res) {
     // TODO : verify if the token is valid and correspond to an admin
     // #swagger.tags = ['Users']
     // #swagger.summary = 'Mettre à jour les informations de l utilisateur (réservé à un utilisateur administrateur)'
     // #swagger.parameters['obj'] = { in: 'body', schema: { $name: 'John Doe', $email: 'John.Doe@acme.com', $password: '1m02P@SsF0rt!' }}
     const userModified = {}
-    for (const field of ['name', 'email', 'password']) {
+    for (const field of ['name', 'email', 'password', 'isAdmin']) {
       if (has(req.body, field)) {
+        if (field === 'isAdmin' && !req.user.isAdmin) {
+          throw new CodeError('Only admin can update role', status.FORBIDDEN)
+        }
         if (field === 'password') {
           userModified.passhash = await bcrypt.hash(req.body.password, 10)
         } else {
@@ -72,7 +75,7 @@ module.exports = {
     await userModel.update(userModified, { where: { id: req.params.id } })
     res.json({ status: true, message: 'User updated' })
   },
-  async deleteUser (req, res) {
+  async deleteUser(req, res) {
     // TODO : verify if the token is valid and correspond to an admin
     // #swagger.tags = ['Users']
     // #swagger.summary = 'Delete User'
