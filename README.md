@@ -1,20 +1,26 @@
 ---
 title: Application de Gestion et Déploiement d'Instances de Chat IA
-author:  
-- Elza Latifi
-- Felix Picon
-- Jeremy Primard
-- Timothe Recoura
---- 
+author:
+    - Elza Latifi
+    - Felix Picon
+    - Jeremy Primard
+    - Timothe Recoura
+---
+
+## Contexte du Projet
+
+Application web de gestion et déploiement d'instances de chat IA avec système d'authentification et de tickets.
+
+Ce projet permet aux utilisateurs de demander le déploiement de modèles d'IA (via Ollama) et aux administrateurs de gérer ces demandes et les instances Docker associées.
 
 ## Installation
 
 ### Prérequis
 
-- Node.js (version 18 ou supérieure)
-- npm ou yarn
+- Node.js (version 20 recommandée)
+- npm
 - Git
-- Docker (optionnel, pour le déploiement des instances de chat IA)
+- Docker (optionnel en dév, requis en prod pour les modèles IA)
 
 ### Variables d'environnement
 
@@ -32,6 +38,7 @@ REFRESH_TOKEN_EXPIRY=7d
 ### Installation en mode développement
 
 **Frontend :**
+
 ```bash
 cd frontend
 npm install
@@ -40,15 +47,17 @@ npm run dev
 ```
 
 **Backend :**
+
 ```bash
 cd backend
 npm install
-npm run startdev
+npm run start:dev
 # Backend accessible sur http://localhost:3000/api
 # Documentation Swagger sur http://localhost:3000/doc
 ```
 
 **Backend avec proxy React (tout sur le port 3000) :**
+
 ```bash
 cd backend
 npm install
@@ -59,6 +68,7 @@ npm run startdev:proxyreact
 ```
 
 **Tests :**
+
 ```bash
 # Tests backend
 cd backend
@@ -71,28 +81,94 @@ npm test
 
 ### Installation en mode production
 
-```bash
-# Build du frontend
-cd frontend
-npm install
-npm run build
-# Génère les fichiers statiques dans frontend/dist
+Pour la production, le projet utilise un script de build personnalisé qui compile le frontend (Vite), obfusque le code, et prépare le backend.
 
-# Démarrage du backend
+```bash
+# 1. Installation des dépendances
 cd backend
 npm install
+
+# 2. Build complet (Frontend + Backend)
+npm run build:backend
+# Cela génère un dossier 'backend/dist' contenant l'application complète optimisée et obfusquée.
+
+# 3. Initialisation de la base de données
+npm run updatedb
+
+# 4. Démarrage
 npm run start
-# Le backend sert automatiquement les fichiers statiques du frontend
+# Lance 'node dist/server.js'
 ```
 
 **Accès :**
+
 - Application : `http://localhost:3000/`
 - API : `http://localhost:3000/api`
 - Documentation : `http://localhost:3000/doc`
 
-## Cahier des charges
+## Déploiement VPS
 
-Ici vous décrivez les fonctionnalités souhaitées et celles effectivement mises en oeuvre. Avec un diagramme UML des cas d'usage et des maquettes des vues souhaitées et des captures d'écran de ce qui a été réalisé.
+Ce projet est conçu pour être déployé sur un serveur VPS Linux (Ubuntu/Debian/Alpine).
+
+### Installation automatisée (Recommandée)
+
+Un script `setup_vps.sh` est fourni pour installer automatiquement les dépendances sur un VPS :
+
+- Node.js 20
+- Nginx & Certbot (HTTPS)
+- Docker
+- PM2
+
+```bash
+chmod +x setup_vps.sh
+./setup_vps.sh
+```
+
+### Gestion du processus
+
+En production, l'application est gérée par **PM2** :
+
+```bash
+pm2 start dist/server.js --name "app-ia"
+pm2 save
+pm2 startup
+```
+
+### Configuration HTTPS (Nginx)
+
+Exemple de configuration pour utiliser Nginx comme reverse proxy (port 80/443) :
+
+```nginx
+server {
+    listen 80;
+    server_name votre-domaine.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Activater HTTPS avec Certbot :
+
+```bash
+sudo certbot --nginx -d votre-domaine.com
+```
+
+### Dépannage Docker
+
+Si l'image Ollama est manquante :
+
+```bash
+docker pull ollama/ollama:latest
+```
+
+## Cahier des charges
 
 ### Cas d'usage
 
@@ -111,7 +187,7 @@ rectangle Application {
   usecase "Créer une demande de déploiement" as CREATE_REQ
   usecase "Consulter mes demandes" as VIEW_MY_REQ
   usecase "Voir l'état d'une demande" as VIEW_STATUS
-  
+
   usecase "Consulter toutes les demandes" as VIEW_ALL_REQ
   usecase "Valider une demande" as APPROVE
   usecase "Rejeter une demande" as REJECT
@@ -140,41 +216,61 @@ a --> DELETE_INST
 @enduml
 ```
 
-**Fonctionnalités implémentées :**
+### Flux de Travail
+
+1. **Client crée une demande** → État: `pending`
+2. **Admin valide la demande** → État: `approved` → Déploiement Docker Compose automatique
+3. **Instance créée** → État: `deployed` → Instance disponible (URL fournie)
+4. **Admin gère l'instance** → Actions possibles : start, stop, restart, voir les logs, supprimer
+
+### Fonctionnalités implémentées
+
+**Utilisateurs (Clients) :**
+
 - ✅ Authentification complète (inscription, connexion, déconnexion, refresh token)
-- ✅ Gestion des utilisateurs (CRUD avec contrôle d'accès)
-- ✅ Système de tokens JWT avec refresh tokens (stockage en base de données)
-- ✅ Validation des mots de passe (complexité requise)
+- ✅ Consultation des modèles IA disponibles
+- ✅ Création et suivi des demandes de déploiement
+
+**Administrateurs :**
+
+- ✅ Gestion des demandes (Validation/Rejet)
+- ✅ Gestion des modèles IA (Recherche via Ollama API, Ajout, Suppression)
+- ✅ Gestion des instances Docker (Démarrage, Arrêt, Logs, Suppression)
+
+**Sécurité :**
+
+- ✅ Authentification JWT (Access + Refresh Tokens)
+- ✅ Hashage des mots de passe (bcrypt)
+- ✅ Contrôle d'accès basé sur les rôles (RBAC) pour les routes protégées API
 - ✅ Middleware d'authentification et d'autorisation (verifyToken, isAdmin, isOwnerOrAdmin)
-- ✅ Documentation API automatique avec Swagger
-- ⏳ Sélection de modèles IA (à implémenter)
-- ⏳ Création de demandes (à implémenter)
-- ⏳ Gestion des demandes par admin (à implémenter)
-- ⏳ Gestion des instances Docker (à implémenter)
 
 ### Maquettes
 
 **Page d'accueil / Connexion :**
+
 - Formulaire de connexion (email, mot de passe)
 - Lien vers l'inscription
 - Affichage des modèles IA disponibles (même sans être connecté)
 
 **Tableau de bord utilisateur :**
+
 - Liste des modèles IA disponibles avec description
 - Formulaire de création de demande (sélection du modèle IA)
 - Liste de mes demandes avec leur statut (pending, approved, rejected, deployed)
 - Détails d'une demande (date de création, statut, modèle IA demandé)
 
 **Tableau de bord administrateur :**
+
 - Liste de toutes les demandes (tous les utilisateurs)
-  - Filtres par statut
-  - Actions : Valider / Rejeter
+    - Filtres par statut
+    - Actions : Valider / Rejeter
 - Liste des instances déployées
-  - Statut de chaque instance (running, stopped, error)
-  - Actions : Démarrer / Arrêter / Redémarrer / Voir logs / Supprimer
-  - Informations : Port, URL, date de création
+    - Statut de chaque instance (running, stopped, error)
+    - Actions : Démarrer / Arrêter / Redémarrer / Voir logs / Supprimer
+    - Informations : Port, URL, date de création
 
 **Vue détail instance :**
+
 - Informations de l'instance
 - Logs en temps réel
 - Contrôles (start/stop/restart)
@@ -189,50 +285,48 @@ Documentation Swagger disponible sur `/doc` lorsque le serveur est démarré.
 
 #### Authentification
 
-| ENDPOINT | GET | POST | PUT | DELETE | Description |
-|----------|-----|------|-----|--------|-------------|
-| `/api/auth/register` | | ✅ Public | | | Inscription : **name, email, password** → Retourne tokens JWT |
-| `/api/auth/login` | | ✅ Public | | | Connexion : **email, password** → Retourne tokens JWT |
-| `/api/auth/refresh` | | ✅ Public | | | Rafraîchir le token d'accès : **refreshToken** |
-| `/api/auth/logout` | | ✅ Public | | | Déconnexion : **refreshToken** |
-| `/api/auth/me` | ✅ TOKEN | | | | Informations de l'utilisateur connecté |
+| ENDPOINT             | GET      | POST      | PUT | DELETE | Description                                                   |
+| -------------------- | -------- | --------- | --- | ------ | ------------------------------------------------------------- |
+| `/api/auth/register` |          | ✅ Public |     |        | Inscription : **name, email, password** → Retourne tokens JWT |
+| `/api/auth/login`    |          | ✅ Public |     |        | Connexion : **email, password** → Retourne tokens JWT         |
+| `/api/auth/refresh`  |          | ✅ Public |     |        | Rafraîchir le token d'accès : **refreshToken**                |
+| `/api/auth/logout`   |          | ✅ Public |     |        | Déconnexion : **refreshToken**                                |
+| `/api/auth/me`       | ✅ TOKEN |           |     |        | Informations de l'utilisateur connecté                        |
 
 #### Utilisateurs
 
-| ENDPOINT | GET | POST | PUT | DELETE | Description |
-|----------|-----|------|-----|--------|-------------|
-| `/api/users` | ✅ TOKEN | | | | Liste tous les utilisateurs (id, name, email) |
-| `/api/users/:id` | | | ✅ TOKEN (OWNER/ADMIN) | ✅ TOKEN (ADMIN) | Mettre à jour / Supprimer un utilisateur |
+| ENDPOINT         | GET      | POST | PUT                    | DELETE           | Description                                   |
+| ---------------- | -------- | ---- | ---------------------- | ---------------- | --------------------------------------------- |
+| `/api/users`     | ✅ TOKEN |      |                        |                  | Liste tous les utilisateurs (id, name, email) |
+| `/api/users/:id` |          |      | ✅ TOKEN (OWNER/ADMIN) | ✅ TOKEN (ADMIN) | Mettre à jour / Supprimer un utilisateur      |
 
 #### Modèles IA
 
-| ENDPOINT | GET | POST | PUT | DELETE | Description |
-|----------|-----|------|-----|--------|-------------|
-| `/api/ai-models` | ⏳ | | | | Liste des modèles IA disponibles (à implémenter) |
-| `/api/ai-models/:id` | ⏳ | | | | Détails d'un modèle IA (à implémenter) |
+| ENDPOINT                | GET      | POST     | PUT | DELETE   | Description                          |
+| ----------------------- | -------- | -------- | --- | -------- | ------------------------------------ |
+| `/api/ai-models`        | ✅ TOKEN | ✅ ADMIN |     |          | Liste des modèles IA / Créer (Admin) |
+| `/api/ai-models/search` | ✅ ADMIN |          |     |          | Recherche de modèles (via Ollama)    |
+| `/api/ai-models/:id`    |          |          |     | ✅ ADMIN | Supprimer un modèle IA               |
 
 #### Demandes (Tickets)
 
-| ENDPOINT | GET | POST | PUT | DELETE | Description |
-|----------|-----|------|-----|--------|-------------|
-| `/api/requests` | ⏳ | ⏳ | | | Liste ses demandes / Créer une demande (à implémenter) |
-| `/api/requests/:id` | ⏳ | | | | Détails d'une demande (à implémenter) |
-| `/api/requests/:id/approve` | | ⏳ | | | Valider une demande → Déploie l'instance (à implémenter) |
-| `/api/requests/:id/reject` | | ⏳ | | | Rejeter une demande (à implémenter) |
+| ENDPOINT                    | GET      | POST     | PUT | DELETE | Description                              |
+| --------------------------- | -------- | -------- | --- | ------ | ---------------------------------------- |
+| `/api/requests`             | ✅ TOKEN | ✅ TOKEN |     |        | Liste ses demandes / Créer une demande   |
+| `/api/requests/admin/all`   | ✅ ADMIN |          |     |        | Liste de toutes les demandes (Admin)     |
+| `/api/requests/:id/approve` |          | ✅ ADMIN |     |        | Valider une demande → Déploie l'instance |
+| `/api/requests/:id/reject`  |          | ✅ ADMIN |     |        | Rejeter une demande                      |
 
 #### Instances (Chats déployés)
 
-| ENDPOINT | GET | POST | PUT | DELETE | Description |
-|----------|-----|------|-----|--------|-------------|
-| `/api/instances` | ⏳ | | | | Liste toutes les instances (à implémenter) |
-| `/api/instances/:id` | ⏳ | | | | Détails d'une instance (à implémenter) |
-| `/api/instances/:id/start` | | ⏳ | | | Démarrer une instance (à implémenter) |
-| `/api/instances/:id/stop` | | ⏳ | | | Arrêter une instance (à implémenter) |
-| `/api/instances/:id/restart` | | ⏳ | | | Redémarrer une instance (à implémenter) |
-| `/api/instances/:id/logs` | ⏳ | | | | Voir les logs d'une instance (à implémenter) |
-| `/api/instances/:id` | | | | ⏳ | Supprimer une instance (à implémenter) |
+| ENDPOINT                 | GET      | POST     | PUT | DELETE | Description                                      |
+| ------------------------ | -------- | -------- | --- | ------ | ------------------------------------------------ |
+| `/api/chats`             | ✅ TOKEN | ✅ ADMIN |     |        | Liste des instances / Créer une instance (Admin) |
+| `/api/chats/:id/status`  | ✅ TOKEN |          |     |        | Statut d'une instance                            |
+| `/api/chats/:id/message` |          | ✅ TOKEN |     |        | Envoyer un message à une instance                |
 
 **Légende :**
+
 - ✅ = Route disponible et implémentée
 - ⏳ = Route planifiée mais non implémentée
 - TOKEN = Nécessite un token JWT valide (header: `Authorization: Bearer <token>`)
@@ -240,104 +334,14 @@ Documentation Swagger disponible sur `/doc` lorsque le serveur est démarré.
 - OWNER = Nécessite d'être le propriétaire de la ressource
 - Public = Route accessible sans authentification
 
-#### Validations et règles métier
+### Architecture du code
 
-**Inscription (`POST /api/auth/register`) :**
-- **name** : Requis, validation regex `^[a-z\-'\s]{1,128}$/i` (lettres, tirets, apostrophes, espaces, 1-128 caractères)
-- **email** : Requis, doit être un email valide et unique
-- **password** : Requis, doit respecter les critères suivants :
-  - Minimum 8 caractères
-  - Au moins 1 majuscule
-  - Au moins 1 minuscule
-  - Au moins 1 chiffre
-  - Au moins 1 caractère spécial (`!@#$%^&*`)
-  - Caractères autorisés : lettres, chiffres, caractères spéciaux `!@#$%^&*`
-- **isAdmin** : Optionnel, booléen (par défaut `false`)
-
-**Connexion (`POST /api/auth/login`) :**
-- **email** : Requis
-- **password** : Requis
-- En cas d'erreur (email ou mot de passe invalide), retourne un message générique : "Invalid email or password" (pour des raisons de sécurité)
-
-**Mise à jour utilisateur (`PUT /api/users/:id`) :**
-- **name** : Optionnel, même validation que lors de l'inscription
-- **email** : Optionnel, doit être un email valide
-- **password** : Optionnel, même validation que lors de l'inscription
-- Au moins un champ doit être fourni
-
-#### Formats de réponse
-
-**Réponse de succès standard :**
-```json
-{
-  "status": true,
-  "message": "Message de succès",
-  "data": { ... }
-}
-```
-
-**Réponse d'erreur standard :**
-```json
-{
-  "status": false,
-  "message": "Message d'erreur"
-}
-```
-
-**Exemple - Inscription réussie :**
-```json
-{
-  "status": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com",
-      "isAdmin": false
-    },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-**Exemple - Connexion réussie :**
-```json
-{
-  "status": true,
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com",
-      "isAdmin": false
-    },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-**Exemple - Refresh token :**
-```json
-{
-  "status": true,
-  "message": "Token refreshed successfully",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-## Architecture du code
-
-### FrontEnd
+#### FrontEnd
 
 **Framework :** React 19.2.0 avec Vite 7.2.4
 
 **Structure actuelle :**
+
 ```
 frontend/
 ├── index.html              # Point d'entrée HTML
@@ -346,153 +350,73 @@ frontend/
 ├── eslint.config.js        # Configuration ESLint
 └── src/
     ├── main.jsx            # Point d'entrée React
-    ├── App.jsx             # Composant principal (template de base)
-    ├── App.css             # Styles du composant App
+    ├── App.jsx             # Composant principal (Routing et Layout)
+    ├── App.css             # Styles de l'App
     ├── index.css           # Styles globaux
+    ├── contexts/           # Contextes React (AuthContext...)
+    ├── components/         # Composants réutilisables (Navbar...)
+    ├── pages/              # Pages de l'application
+    │   ├── Login.jsx       # Page de connexion
+    │   ├── Register.jsx    # Page d'inscription
+    │   ├── Dashboard.jsx   # Tableau de bord utilisateur
+    │   ├── Requests.jsx    # Gestion des demandes utilisateur
+    │   ├── Chat.jsx        # Interface de chat
+    │   ├── AdminRequests.jsx # Administration des demandes
+    │   ├── AdminModels.jsx   # Administration des modèles IA
+    │   └── Unauthorized.jsx  # Page non autorisé
     └── assets/             # Ressources statiques
-        └── react.svg
 ```
 
-**Choix techniques :**
-- **Vite** : Build tool rapide pour le développement
-- **React 19** : Framework UI moderne
-- **Pas de state management** : À implémenter (Context API ou Redux)
-- **Pas de routing** : À implémenter (React Router)
-
-**À développer :**
-- Composants d'authentification (Login, Register)
-- Composants de gestion des demandes
-- Composants d'administration
-- Gestion d'état globale
-- Routing entre les pages
-- Appels API avec gestion des tokens
-
-### Backend
-
-#### Schéma de votre base de donnée
-
-**Modèles actuellement implémentés :**
-
-```plantuml
-class User {
-  +id : INTEGER (PK, auto-increment)
-  +name : STRING(128)
-  +email : STRING(128) [unique]
-  +passhash : STRING(60)
-  +isAdmin : BOOLEAN
-}
-
-class RefreshToken {
-  +id : INTEGER (PK, auto-increment)
-  +token : STRING(500) [unique]
-  +userId : INTEGER (FK)
-  +expiresAt : DATETIME
-  +createdAt : DATETIME
-}
-
-User "1" -- "n" RefreshToken : has
-```
-
-**Modèles planifiés (à implémenter) :**
-
-```plantuml
-class AIModel {
-  +id : INTEGER (PK, auto-increment)
-  +name : STRING(128)
-  +description : TEXT
-  +dockerImage : STRING(255)
-  +dockerCompose : TEXT
-  +config : JSON
-  +isActive : BOOLEAN
-}
-
-class Request {
-  +id : INTEGER (PK, auto-increment)
-  +status : ENUM(pending, approved, rejected, deployed)
-  +createdAt : DATETIME
-  +updatedAt : DATETIME
-  +approvedAt : DATETIME
-  +rejectedAt : DATETIME
-  +rejectionReason : TEXT
-}
-
-class Instance {
-  +id : INTEGER (PK, auto-increment)
-  +name : STRING(128)
-  +status : ENUM(running, stopped, error, starting, stopping)
-  +dockerComposePath : STRING(255)
-  +port : INTEGER
-  +url : STRING(255)
-  +createdAt : DATETIME
-  +updatedAt : DATETIME
-  +lastStartedAt : DATETIME
-  +lastStoppedAt : DATETIME
-}
-```
-
-**Relations implémentées :**
-- Un utilisateur peut avoir plusieurs refresh tokens (relation 1-n)
-- Les refresh tokens sont supprimés automatiquement lors de la suppression d'un utilisateur (CASCADE)
-
-**Relations planifiées (à implémenter) :**
-- Un utilisateur peut créer plusieurs demandes
-- Une demande est liée à un modèle IA et à un utilisateur
-- Une demande validée génère une instance
-- Une instance est liée à un modèle IA
-
-#### Architecture de votre code
+#### Backend
 
 **Structure actuelle :**
+
 ```
 backend/
 ├── package.json            # Dépendances Node.js
 ├── Procfile                # Configuration de déploiement
-├── .eslintrc.js            # Configuration ESLint
 ├── swagger_output.json     # Documentation API générée
 └── src/
     ├── server.js            # Point d'entrée du serveur
     ├── app.js               # Configuration Express
-    ├── __tests__/
-    │   └── api.user.test.js # Tests d'intégration
     ├── controllers/
-    │   ├── auth.js          # Contrôleur authentification (register, login, refresh, logout, me)
-    │   └── user.js          # Contrôleur utilisateurs (CRUD)
+    │   ├── auth.js          # Contrôleur authentification
+    │   ├── user.js          # Contrôleur utilisateurs
+    │   ├── aiModel.js       # Contrôleur modèles IA
+    │   ├── request.js       # Contrôleur demandes
+    │   └── chat.js          # Contrôleur chats
     ├── models/
-    │   ├── database.js       # Configuration Sequelize
-    │   ├── users.js          # Modèle User
-    │   └── refreshToken.js   # Modèle RefreshToken
+    │   ├── database.js      # Configuration Sequelize
+    │   ├── users.js         # Modèle User
+    │   ├── refreshToken.js  # Modèle RefreshToken
+    │   ├── aiModels.js      # Modèle AIModel
+    │   ├── requests.js      # Modèle Request
+    │   └── chats.js         # Modèle Chat/Instance
     ├── routes/
-    │   ├── router.js         # Routeur principal
-    │   ├── api.js            # Routeur API (/api)
-    │   ├── auth.js           # Routes /api/auth/* (register, login, refresh, logout, me)
-    │   └── user.js           # Routes /api/users/* (getUsers, updateUser, deleteUser)
+    │   ├── router.js        # Routeur racine
+    │   ├── api.js           # Routeur API (/api)
+    │   ├── auth.js          # Routes auth
+    │   ├── user.js          # Routes users
+    │   ├── aiModel.js       # Routes modèles IA
+    │   ├── request.js       # Routes demandes
+    │   └── chat.js          # Routes chats
     ├── middleware/
-    │   └── auth.js           # Middleware d'authentification (verifyToken, isAdmin, isOwnerOrAdmin)
-    ├── util/
-    │   ├── CodeError.js      # Classe d'erreur personnalisée
-    │   ├── logger.js         # Configuration du logging
-    │   ├── swagger.js        # Génération de la documentation Swagger
-    │   └── updatedb.js      # Initialisation de la base de données
-    └── frontend/
-        └── index.html        # Page HTML de fallback
+    │   └── auth.js          # Middleware Auth & Admin
+    └── util/                # Utilitaires (Logger, Swagger, DB...)
 ```
 
 **Choix techniques :**
+
 - **Express** : Framework web minimaliste
 - **Sequelize** : ORM pour la gestion de la base de données
-- **JWT** : Authentification avec tokens (jsonwebtoken)
-  - Access tokens : Tokens d'accès de courte durée (configurable via `ACCESS_TOKEN_EXPIRY`)
-  - Refresh tokens : Tokens de rafraîchissement de longue durée (configurable via `REFRESH_TOKEN_EXPIRY`, stockés en base)
-- **bcrypt** : Hashage des mots de passe (10 rounds de salage)
-- **Swagger** : Documentation API automatique (swagger-autogen + swagger-ui-express)
-- **SQLite** : Base de données en développement (par défaut)
-- **MariaDB** : Base de données en production (configurable via variable d'environnement `DB`)
-- **Helmet** : Sécurité HTTP (headers de sécurité)
-- **CORS** : Gestion des requêtes cross-origin
-- **Morgan** : Logging des requêtes HTTP
-- **express-custom-error** : Gestion d'erreurs personnalisée avec support async/await
+- **JWT** : Authentification avec tokens (Access + Refresh)
+- **Swagger** : Documentation API automatique
+- **SQLite** : Base de données en développement
+- **Dockerode** : Gestion des conteneurs Docker pour les instances
+- **Esbuild** : Bundler et obfuscation pour la production
 
 **Pattern MVC :**
+
 - **Models** : Définition des entités de base de données
 - **Controllers** : Logique métier et gestion des requêtes
 - **Routes** : Définition des endpoints API
@@ -503,181 +427,94 @@ backend/
 #### Rôles disponibles
 
 1. **Utilisateur (Client)** : `isAdmin = false`
-   - Peut consulter la liste des utilisateurs (GET `/api/users`)
-   - Peut modifier ses propres informations (PUT `/api/users/:id` si owner)
-   - ⏳ Peut créer des demandes de déploiement (à implémenter)
-   - ⏳ Peut consulter ses propres demandes (à implémenter)
-   - ⏳ Peut consulter la liste des modèles IA (à implémenter)
+    - Peut consulter la liste des utilisateurs
+    - Peut modifier ses propres informations
+    - ✅ Peut créer des demandes de déploiement
+    - ✅ Peut consulter ses propres demandes
+    - ✅ Peut consulter la liste des modèles IA
+    - ✅ Peut interagir avec ses instances de chat
 
 2. **Administrateur** : `isAdmin = true`
-   - Tous les droits utilisateur
-   - Peut modifier n'importe quel utilisateur (PUT `/api/users/:id`)
-   - Peut supprimer des utilisateurs (DELETE `/api/users/:id`)
-   - ⏳ Peut consulter toutes les demandes (à implémenter)
-   - ⏳ Peut valider/rejeter les demandes (à implémenter)
-   - ⏳ Peut gérer les instances (start/stop/logs/delete) (à implémenter)
+    - Tous les droits utilisateur
+    - Peut gérer tous les utilisateurs
+    - ✅ Peut consulter et gérer toutes les demandes (valider/rejeter)
+    - ✅ Peut gérer les modèles IA (ajouter/supprimer/rechercher)
+    - ✅ Peut gérer les instances de chat
 
-#### Implémentation côté backend
+### Schéma de la base de données
 
-**Middleware d'authentification** (`src/middleware/auth.js`) :
+**Modèles implémentés :**
 
-1. **`verifyToken()`** : Vérifie la validité du token JWT
-   - Extrait le token du header `Authorization: Bearer <token>`
-   - Décode le token et récupère l'utilisateur
-   - Attache `req.user` avec les informations de l'utilisateur
-
-2. **`isAdmin()`** : Vérifie que l'utilisateur est administrateur
-   - Vérifie `req.user.isAdmin === true`
-   - Retourne 403 si l'utilisateur n'est pas admin
-
-3. **`isOwnerOrAdmin()`** : Vérifie que l'utilisateur est propriétaire ou admin
-   - Compare `req.user.id` avec l'ID de la ressource
-   - Autorise si propriétaire OU admin
-
-**Exemple d'utilisation :**
-```javascript
-// Route protégée nécessitant authentification
-router.get('/users', verifyToken(), user.getUsers)
-
-// Route nécessitant les droits admin
-router.delete('/users/:id', verifyToken(), isAdmin(), user.deleteUser)
-
-// Route nécessitant d'être propriétaire ou admin
-router.put('/users/:id', verifyToken(), isOwnerOrAdmin(), user.updateUser)
-```
-
-**Token JWT :**
-
-Le **access token** contient les informations suivantes :
-```json
-{
-  "id": 1,
-  "email": "user@example.com",
-  "isAdmin": false
+```plantuml
+@startuml
+class User {
+  +id : INTEGER (PK)
+  +name : STRING(128)
+  +email : STRING(128)
+  +passhash : STRING
+  +isAdmin : BOOLEAN
 }
-```
 
-Le **refresh token** contient uniquement :
-```json
-{
-  "id": 1,
-  "email": "user@example.com"
+class RefreshToken {
+  +id : INTEGER (PK)
+  +token : STRING
+  +userId : INTEGER (FK)
 }
+
+class AIModel {
+  +id : INTEGER (PK)
+  +name : STRING(128)
+  +description : TEXT
+  +dockerImage : STRING
+  +config : JSON
+}
+
+class Request {
+  +id : INTEGER (PK)
+  +status : ENUM
+  +userId : INTEGER (FK)
+  +modelId : INTEGER (FK)
+}
+
+class Instance {
+  +id : INTEGER (PK)
+  +name : STRING
+  +status : ENUM
+  +port : INTEGER
+  +requestId : INTEGER (FK)
+}
+
+User "1" -- "n" RefreshToken : owns
+User "1" -- "n" Request : creates
+Request "1" -- "1" AIModel : for
+Request "1" -- "0..1" Instance : spawns
+@enduml
 ```
-
-**Gestion des tokens :**
-- Les access tokens sont de courte durée (par défaut 1h, configurable via `ACCESS_TOKEN_EXPIRY`)
-- Les refresh tokens sont de longue durée (par défaut 7d, configurable via `REFRESH_TOKEN_EXPIRY`)
-- Les refresh tokens sont stockés en base de données avec une date d'expiration
-- Lors du logout, le refresh token est supprimé de la base de données
-- Lors du refresh, un nouveau access token est généré sans créer de nouveau refresh token
-
-#### Implémentation côté frontend
-
-**À implémenter :**
-- Stockage du token dans le localStorage ou sessionStorage
-- Ajout du header `Authorization: Bearer <token>` sur toutes les requêtes API
-- Redirection vers la page de login si le token est invalide/expiré
-- Affichage conditionnel des éléments selon le rôle (admin vs utilisateur)
-- Gestion du refresh token pour renouveler automatiquement le token d'accès
-
-
-## Test
-
-### Backend
-
-**Framework :** Jest avec Supertest pour les tests d'intégration
-
-**Tests existants :**
-- `src/__tests__/api.user.test.js` : Test d'authentification et récupération des utilisateurs
-  - Test de connexion avec email/password
-  - Test de récupération de la liste des utilisateurs avec token JWT
-  - Vérification du format de réponse
-
-**Commande :**
-```bash
-cd backend
-npm test
-```
-
-**Couverture :**
-- ⏳ Tests unitaires des contrôleurs (à implémenter)
-- ⏳ Tests des modèles (à implémenter)
-- ⏳ Tests des middlewares (à implémenter)
-- ✅ Tests d'intégration API (partiellement implémenté)
-
-**À développer :**
-- Tests de toutes les routes API
-- Tests des cas d'erreur
-- Tests de validation des données
-- Tests de sécurité (tokens expirés, accès non autorisés)
-
-### Frontend
-
-**À implémenter :**
-- Tests unitaires des composants (React Testing Library)
-- Tests d'intégration des flux utilisateur
-- Tests E2E (Cypress ou Playwright)
 
 ## Intégration + déploiement
 
 ### Intégration Continue
 
 **À mettre en place :**
+
 - Pipeline CI/CD (GitLab CI ou GitHub Actions)
 - Exécution automatique des tests à chaque commit
 - Vérification de la qualité du code (ESLint)
 - Build automatique du frontend
 - Déploiement automatique en staging/production
 
-**Exemple de pipeline GitLab CI :**
-```yaml
-stages:
-  - test
-  - build
-  - deploy
-
-test_backend:
-  stage: test
-  script:
-    - cd backend && npm install && npm test
-
-test_frontend:
-  stage: test
-  script:
-    - cd frontend && npm install && npm test
-
-build:
-  stage: build
-  script:
-    - cd frontend && npm install && npm run build
-```
-
 ### Déploiement
 
-**Backend :**
-- Plateforme : Scalingo ou Heroku
-- Base de données : MariaDB (fournie par la plateforme)
-- Variables d'environnement à configurer :
-  - `PORT` (généré automatiquement)
-  - `DB` (URL de connexion MariaDB)
-  - `ACCESS_TOKEN_SECRET`
-  - `REFRESH_TOKEN_SECRET`
-  - `ACCESS_TOKEN_EXPIRY`
-  - `REFRESH_TOKEN_EXPIRY`
+**Backend & Frontend :**
 
-**Frontend :**
-- Build statique servi par le backend Express
-- Ou déploiement séparé sur Netlify/Vercel
+- Application monolithique (Backend + Frontend intégré) après build
+- Déploiement sur VPS Linux (Alpine/Debian/Ubuntu)
+- Reverse Proxy Nginx + Certbot pour HTTPS
+- Gestion des processus via PM2
 
 **Instances Docker :**
+
 - Les instances de chat sont déployées dynamiquement via Docker Compose
 - Chaque instance utilise un port unique
 - Gestion des volumes pour la persistance des données
 - Monitoring des logs et de l'état des conteneurs
-
-**Procfile (Scalingo) :**
-```
-web: npm run start
-```
-
